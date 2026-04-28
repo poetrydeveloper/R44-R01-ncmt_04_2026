@@ -1,0 +1,31 @@
+-- Очищаем старую структуру
+print("Cleaning old Rojo structure...")
+
+-- ServerScriptService
+for _, child in ipairs(game.ServerScriptService:GetChildren()) do
+    if child.Name ~= "Cleanup" and child.Name ~= "Server" then
+        child:Destroy()
+        print("Deleted: ServerScriptService." .. child.Name)
+    end
+end
+
+-- StarterPlayerScripts
+for _, child in ipairs(game.StarterPlayer.StarterPlayerScripts:GetChildren()) do
+    if child.Name ~= "Client" then
+        child:Destroy()
+        print("Deleted: StarterPlayerScripts." .. child.Name)
+    end
+end
+
+-- StarterGui
+for _, child in ipairs(game.StarterPlayer.StarterGui:GetChildren()) do
+    if child.Name ~= "UI" then
+        child:Destroy()
+        print("Deleted: StarterGui." .. child.Name)
+    end
+end
+
+print("Cleanup complete! Now disconnect and reconnect Rojo.")
+
+-- Скрипт самоуничтожится
+script:Destroy()

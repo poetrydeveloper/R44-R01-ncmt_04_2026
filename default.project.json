@@ -1,0 +1,37 @@
+{
+  "name": "NecromancerGame",
+  "tree": {
+    "$className": "DataModel",
+    
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Constants": {
+        "$path": "src/constants"
+      }
+    },
+    
+    "ServerScriptService": {
+      "$path": "src/server"
+    },
+    
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "Modules": {
+        "$path": "src/server-modules"
+      }
+    },
+    
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$path": "src/client"
+      },
+      "StarterGui": {
+        "$path": "src/ui"
+      }
+    }
+  }
+}

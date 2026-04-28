@@ -1,0 +1,39 @@
+MyProject/
+├── src/
+│   ├── shared/                 # Реплицируется (клиент+сервер)
+│   │   ├── Types.lua           # определения типов (Unit, Slot, Buff)
+│   │   ├── Enums.lua           # UnitType, Rarity, Element
+│   │   └── Utils.lua
+│   │
+│   ├── constants/              # Статические данные (не изменяются)
+│   │   ├── BaseStats.lua       # Базовые характеристики юнитов
+│   │   ├── Buffs.lua           # Лед.прикосновение, Ядов.покров и т.д.
+│   │   └── Recipes.lua         # Рецепты слияния могил
+│   │
+│   ├── server/                 # Серверные скрипты (Entry points)
+│   │   ├── GameManager.server.lua    # Главный цикл
+│   │   ├── DataLoader.server.lua     # Загрузка конфига из Google Sheets
+│   │   └── Init.server.lua           # Запуск всех сервисов
+│   │
+│   ├── server-modules/         # Модули бизнес-логики (твой ServerHandler)
+│   │   ├── ArmyService.lua     # Управление 5 ячейками + лимит душ
+│   │   ├── StorageService.lua  # Склепы (хранение юнитов)
+│   │   ├── RitualService.lua   # Воскрешение (полевое + погост)
+│   │   ├── CraftingService.lua # Механика слияния могил
+│   │   ├── AggroService.lua    # Шкала гнева деревни
+│   │   ├── CorpseManager.lua   # Таймеры гниения
+│   │   └── UnitFactory.lua     # Спавн юнитов с баффами
+│   │
+│   ├── client/                 # Клиентские скрипты
+│   │   ├── SpiritCamera.lua    # Управление духом (камера+клики)
+│   │   ├── InputHandler.lua    # Клики по трупам/могилам
+│   │   └── NetworkBridge.lua   # RemoteEvent обертки
+│   │
+│   └── ui/                     # Интерфейс
+│       ├── SlotPanel.lua       # 5 ячеек + полоски душ
+│       ├── CraftingMenu.lua    # Окно слияния могил
+│       ├── AggroBar.lua        # Индикатор гнева деревни
+│       └── StorageUI.lua       # Склеп (список хранимых юнитов)
+│
+├── default.project.json
+└── build.bat (или build.sh)
