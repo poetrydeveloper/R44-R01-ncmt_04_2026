@@ -37,3 +37,52 @@ MyProject/
 │
 ├── default.project.json
 └── build.bat (или build.sh)
+
+
+
+ОБНОВЛЕННАЯ СТРУКТУРА ПАПОК (без StorageService)
+text
+MyProject/
+├── src/
+│   ├── shared/                 # Реплицируется (клиент+сервер)
+│   │   ├── Types.lua           # определения типов (Unit, Slot, Buff)
+│   │   ├── Enums.lua           # UnitType, Rarity, Element
+│   │   └── Utils.lua
+│   │
+│   ├── constants/              # Статические данные (не изменяются)
+│   │   ├── BaseStats.lua       # Базовые характеристики юнитов + прогрессия
+│   │   ├── Buffs.lua           # Лед.прикосновение, Ядов.покров и т.д.
+│   │   └── Recipes.lua         # Рецепты слияния могил
+│   │
+│   ├── server/                 # Серверные скрипты (Entry points)
+│   │   ├── GameManager.server.lua    # Главный цикл
+│   │   ├── DataLoader.server.lua     # Загрузка конфига из Google Sheets
+│   │   └── Init.server.lua           # Запуск всех сервисов
+│   │
+│   ├── server-modules/         # Модули бизнес-логики
+│   │   ├── ArmyService.lua     # Управление армией + мана + уровни ✅
+│   │   ├── RitualService.lua   # Воскрешение (полевое + погост)
+│   │   ├── CraftingService.lua # Механика слияния могил (Recipes.lua)
+│   │   ├── AggroService.lua    # Шкала гнева деревни
+│   │   ├── CorpseManager.lua   # Таймеры гниения (45 сек)
+│   │   └── UnitFactory.lua     # Спавн юнитов с баффами
+│   │
+│   ├── client/                 # Клиентские скрипты
+│   │   ├── SpiritCamera.lua    # Управление духом (камера+клики)
+│   │   ├── InputHandler.lua    # Клики по трупам/могилам
+│   │   └── NetworkBridge.lua   # RemoteEvent обертки
+│   │
+│   └── ui/                     # Интерфейс
+│       ├── SlotPanel.lua       # 3-20 ячеек (+ полоски здоровья/душ)
+│       ├── SoulStackUI.lua     # Стек карточек (можно скрыть)
+│       ├── CraftingMenu.lua    # Окно слияния могил
+│       ├── AggroBar.lua        # Индикатор гнева деревни
+│       └── CubeButton.lua      # Кнопка входа в куб + кулдаун
+│
+├── default.project.json
+└── build.bat
+Удалено:
+
+❌ StorageService.lua
+
+❌ StorageUI.lua
