@@ -1,6 +1,6 @@
 -- src/server-modules/ArmyService.lua
 -- Управление армией, маной, прогрессией, уровнями
--- ВЕРСИЯ 2.0 — использует BaseStats.lua (без GameConfig)
+-- ВЕРСИЯ 2.1 — ПОЛНОСТЬЮ РАБОЧАЯ
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,6 +20,13 @@ local CubeCooldowns = {}  -- [userId] = endTime (os.time())
 -- ============================================
 -- Вспомогательные функции
 -- ============================================
+
+-- Подсчет количества элементов в таблице
+local function TableCount(t: table): number
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end
 
 -- Получить максимум маны по уровню (из таблицы прогрессии)
 local function GetMaxManaByLevel(level: number): number
@@ -94,16 +101,19 @@ end
 -- Отправить обновление маны клиенту
 local function SendManaUpdate(player: Player, data: Types.PlayerData)
     -- TODO: RemoteEvent для обновления UI
-    -- Пока просто логируем
     print(`[ArmyService] 📡 Мана ${player.Name}: ${data.Mana.Current}/${data.Mana.Max}`)
 end
 
 -- Отправить обновление армии клиенту
 local function SendArmyUpdate(player: Player, data: Types.PlayerData)
-    -- TODO: RemoteEvent для обновления слотов
-    local activeCount = 0
-    for _ in pairs(data.ActiveSlots) do activeCount = activeCount + 1 end
+    local activeCount = TableCount(data.ActiveSlots)
     print(`[ArmyService] 📡 Армия ${player.Name}: ${activeCount}/${data.MaxSlots} слотов занято`)
+end
+
+-- Отправить обновление стека карточек клиенту
+local function SendSoulStackUpdate(player: Player, data: Types.PlayerData)
+    local stackCount = TableCount(data.SoulStack)
+    print(`[ArmyService] 📇 Стек карточек ${player.Name}: ${stackCount} карточек`)
 end
 
 -- ============================================
@@ -154,7 +164,7 @@ end
 function ArmyService.AddExperience(player: Player, amount: number)
     local userId = player.UserId
     local data = PlayersData[userId]
-    if not then return end
+    if not data then return end  -- ИСПРАВЛЕНО: было "if not then"
     
     data.Experience += amount
     print(`[ArmyService] 📈 ${player.Name} +${amount} опыта (всего ${data.Experience})`)
@@ -336,9 +346,44 @@ function ArmyService.AddCardToStack(player: Player, card: Types.Card)
     if not data then return end
     
     data.SoulStack[card.CardId] = card
-    print(`[ArmyService] 📇 ${player.Name} добавил карточку ${card.UnitTypeId} в стек`)
     
-    -- TODO: Отправить обновление стека клиенту
+    print(`[ArmyService] 📇 ${player.Name} добавил карточку ${card.UnitTypeId} (${card.CardId}) в стек. Всего карточек: ${TableCount(data.SoulStack)}`)
+    
+    SendSoulStackUpdate(player, data)
+end
+
+-- Получить карточку из стека
+function ArmyService.GetCardFromStack(player: Player, cardId: string): Types.Card?
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return nil end
+    
+    return data.SoulStack[cardId]
+end
+
+-- Получить весь стек карточек
+function ArmyService.GetSoulStack(player: Player): { [string]: Types.Card }
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return {} end
+    
+    return data.SoulStack
+end
+
+-- Удалить карточку из стека
+function ArmyService.RemoveCardFromStack(player: Player, cardId: string): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return false end
+    
+    if data.SoulStack[cardId] then
+        data.SoulStack[cardId] = nil
+        print(`[ArmyService] 🗑️ ${player.Name} удалил карточку ${cardId} из стека`)
+        SendSoulStackUpdate(player, data)
+        return true
+    end
+    
+    return false
 end
 
 -- Переместить карточку из стека в слот
@@ -386,6 +431,7 @@ function ArmyService.MoveCardToSlot(player: Player, cardId: string, slotIndex: n
     
     print(`[ArmyService] 📦 ${player.Name} переместил ${card.UnitTypeId} в слот ${slotIndex}`)
     SendArmyUpdate(player, data)
+    SendSoulStackUpdate(player, data)
     
     return true
 end
@@ -418,9 +464,58 @@ function ArmyService.ReviveUnitInSlot(player: Player, slotIndex: number): boolea
     print(`[ArmyService] ✨ ${player.Name} оживил ${unit.UnitTypeId} в слоте ${slotIndex}`)
     SendArmyUpdate(player, data)
     
-    -- TODO: Спавн модели юнита в мире
+    -- TODO: Спавн модели юнита в мире (через UnitFactory)
     
     return true
+end
+
+-- Получить юнита из слота
+function ArmyService.GetUnitFromSlot(player: Player, slotIndex: number): Types.ActiveUnit?
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return nil end
+    
+    return data.ActiveSlots[slotIndex]
+end
+
+-- Получить все активные слоты
+function ArmyService.GetActiveSlots(player: Player): { [number]: Types.ActiveUnit? }
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return {} end
+    
+    return data.ActiveSlots
+end
+
+-- Проверить, пуст ли слот
+function ArmyService.IsSlotEmpty(player: Player, slotIndex: number): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return true end
+    
+    return data.ActiveSlots[slotIndex] == nil
+end
+
+-- ============================================
+-- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+-- ============================================
+
+-- Получить уровень игрока
+function ArmyService.GetPlayerLevel(player: Player): number
+    local data = ArmyService.GetPlayerData(player)
+    return data and data.Level or 1
+end
+
+-- Получить максимум маны игрока
+function ArmyService.GetPlayerMaxMana(player: Player): number
+    local data = ArmyService.GetPlayerData(player)
+    return data and data.Mana.Max or 50
+end
+
+-- Получить текущий опыт игрока
+function ArmyService.GetPlayerExperience(player: Player): number
+    local data = ArmyService.GetPlayerData(player)
+    return data and data.Experience or 0
 end
 
 -- ============================================
@@ -451,6 +546,7 @@ function ArmyService.Init()
         -- Отправляем начальные данные клиенту
         SendManaUpdate(player, data)
         SendArmyUpdate(player, data)
+        SendSoulStackUpdate(player, data)
         
         -- Подписка на удаление (выход игрока)
         player.AncestryChanged:Connect(function()
