@@ -13,17 +13,15 @@ local camera = workspace.CurrentCamera
 -- ============================================
 
 local CONFIG = {
-    -- Режим тела (слежка за персонажем)
     BodyMode = {
-        Offset = Vector3.new(0, 5, 15),  -- Сзади-сверху
+        Offset = Vector3.new(0, 5, 15),
         Smoothness = 0.1,
     },
-    -- Режим куба (свободная камера)
     CubeMode = {
-        Distance = 30,      -- Расстояние от центра
-        Height = 15,        -- Высота
-        Speed = 0.5,        -- Скорость вращения
-        ZoomSpeed = 2,      -- Скорость зума
+        Distance = 30,
+        Height = 15,
+        Speed = 0.5,
+        ZoomSpeed = 2,
         MinDistance = 10,
         MaxDistance = 60,
     },
@@ -33,8 +31,8 @@ local CONFIG = {
 -- Состояние
 -- ============================================
 
-local currentMode = "Body"  -- "Body" или "Cube"
-local cubeRotation = 0      -- Угол поворота камеры в кубе
+local currentMode = "Body"
+local cubeRotation = 0
 local cubeDistance = CONFIG.CubeMode.Distance
 local cubeHeight = CONFIG.CubeMode.Height
 
@@ -42,7 +40,7 @@ local playerCharacter = nil
 local playerHumanoidRootPart = nil
 
 -- ============================================
--- Режим тела (обычная камера за персонажем)
+-- Режим тела
 -- ============================================
 
 local function UpdateBodyCamera()
@@ -59,17 +57,15 @@ local function UpdateBodyCamera()
 end
 
 -- ============================================
--- Режим куба (свободная камера, управление мышью)
+-- Режим куба
 -- ============================================
 
 local function UpdateCubeCamera()
-    -- Получаем позицию тела игрока (оно стоит в кубе)
     local bodyPosition = Vector3.zero
     if playerCharacter and playerHumanoidRootPart then
         bodyPosition = playerHumanoidRootPart.Position
     end
     
-    -- Вычисляем позицию камеры
     local angleRad = math.rad(cubeRotation)
     local offsetX = math.sin(angleRad) * cubeDistance
     local offsetZ = math.cos(angleRad) * cubeDistance
@@ -85,13 +81,11 @@ end
 -- ============================================
 
 local function HandleCubeInput()
-    -- Вращение камеры (правой кнопкой мыши + движение)
     if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local delta = UserInputService:GetMouseDelta()
         cubeRotation = cubeRotation - delta.X * CONFIG.CubeMode.Speed
     end
     
-    -- Зум (колесико мыши)
     local zoomDelta = UserInputService:GetMouseDelta().Z
     if zoomDelta ~= 0 then
         cubeDistance = cubeDistance - zoomDelta * CONFIG.CubeMode.ZoomSpeed
@@ -105,13 +99,11 @@ end
 
 local CameraController = {}
 
--- Переключить режим камеры
 function CameraController.SetMode(mode: string)
     currentMode = mode
     print(`[CameraController] 🎥 Режим камеры: ${mode}`)
     
     if mode == "Cube" then
-        -- Сохраняем текущее положение камеры относительно тела
         if playerCharacter and playerHumanoidRootPart then
             local bodyPos = playerHumanoidRootPart.Position
             local camOffset = camera.CFrame.Position - bodyPos
@@ -125,12 +117,10 @@ function CameraController.SetMode(mode: string)
     end
 end
 
--- Получить текущий режим
 function CameraController.GetMode(): string
     return currentMode
-}
+end
 
--- Обновление камеры (вызывается каждый кадр)
 function CameraController.Update(deltaTime: number)
     if currentMode == "Cube" then
         HandleCubeInput()
@@ -140,11 +130,9 @@ function CameraController.Update(deltaTime: number)
     end
 end
 
--- Инициализация
 function CameraController.Init()
     print("[CameraController] 🎥 Инициализация камеры")
     
-    -- Ждем появления персонажа
     player.CharacterAdded:Connect(function(character)
         playerCharacter = character
         playerHumanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -156,7 +144,6 @@ function CameraController.Init()
         playerHumanoidRootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
     end
     
-    -- Запускаем цикл обновления
     RunService.RenderStepped:Connect(function(deltaTime)
         CameraController.Update(deltaTime)
     end)

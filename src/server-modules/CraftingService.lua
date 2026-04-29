@@ -32,7 +32,7 @@ RequestEnhance.Parent = RemoteEvents
 -- ============================================
 
 -- Получить Tier юнита по его UnitTypeId
-local function GetUnitTier(unitTypeId: string): number
+local function GetUnitTier(unitTypeId: string)
     local unitData = BaseStats.Units[unitTypeId]
     if not unitData then
         return 1
@@ -41,7 +41,7 @@ local function GetUnitTier(unitTypeId: string): number
 end
 
 -- Создать новую карточку из рецепта
-local function CreateCardFromRecipe(unitTypeId: string, isMerged: boolean): Types.Card
+local function CreateCardFromRecipe(unitTypeId: string, isMerged: boolean)
     local cardId = `merged_card_{os.time()}_{math.random(1000, 9999)}`
     
     return {
@@ -53,16 +53,14 @@ local function CreateCardFromRecipe(unitTypeId: string, isMerged: boolean): Type
 end
 
 -- Проверить, подходят ли карточки для рецепта (2x)
-local function CheckMerge2Recipe(cards: { Types.Card }): string?
+local function CheckMerge2Recipe(cards)
     if #cards ~= 2 then return nil end
     
     local tier1 = GetUnitTier(cards[1].UnitTypeId)
     local tier2 = GetUnitTier(cards[2].UnitTypeId)
     
-    -- Ищем подходящий рецепт
     for _, recipe in ipairs(Recipes.Merge2) do
         if recipe.InputTiers[1] == tier1 and recipe.InputTiers[2] == tier2 then
-            -- Выбираем случайного юнита из пула
             local outputIndex = math.random(1, #recipe.OutputPool)
             return recipe.OutputPool[outputIndex]
         end
@@ -72,14 +70,13 @@ local function CheckMerge2Recipe(cards: { Types.Card }): string?
 end
 
 -- Проверить, подходят ли карточки для рецепта (3x)
-local function CheckMerge3Recipe(cards: { Types.Card }): string?
+local function CheckMerge3Recipe(cards)
     if #cards ~= 3 then return nil end
     
     local tier1 = GetUnitTier(cards[1].UnitTypeId)
     local tier2 = GetUnitTier(cards[2].UnitTypeId)
     local tier3 = GetUnitTier(cards[3].UnitTypeId)
     
-    -- Ищем подходящий рецепт
     for _, recipe in ipairs(Recipes.Merge3) do
         if recipe.InputTiers[1] == tier1 and 
            recipe.InputTiers[2] == tier2 and 
@@ -91,17 +88,14 @@ local function CheckMerge3Recipe(cards: { Types.Card }): string?
     return nil
 end
 
--- Проверить специальный рецепт (по конкретным юнитам)
-local function CheckSpecialRecipe(cards: { Types.Card }): string?
+-- Проверить специальный рецепт
+local function CheckSpecialRecipe(cards)
     if #cards < 2 or #cards > 3 then return nil end
     
-    -- Собираем список UnitTypeId карточек
     local unitIds = {}
     for _, card in ipairs(cards) do
         table.insert(unitIds, card.UnitTypeId)
     end
-    
-    -- Сортируем для сравнения (порядок не важен)
     table.sort(unitIds)
     
     for _, recipe in ipairs(Recipes.SpecialRecipes) do
@@ -111,7 +105,6 @@ local function CheckSpecialRecipe(cards: { Types.Card }): string?
         end
         table.sort(recipeIds)
         
-        -- Сравниваем
         local match = true
         if #unitIds ~= #recipeIds then
             match = false
@@ -139,23 +132,16 @@ end
 
 local CraftingService = {}
 
--- Слияние нескольких карточек в одну
--- @param player: Player - игрок
--- @param cardIds: { string } - список ID карточек для слияния
--- @return boolean, string|Types.Card - успех, сообщение или новая карточка
-function CraftingService.MergeCards(player: Player, cardIds: { string })
-    -- Получаем данные игрока
+function CraftingService.MergeCards(player, cardIds)
     local playerData = ArmyService.GetPlayerData(player)
     if not playerData then
         return false, "Ошибка загрузки данных игрока"
     end
     
-    -- Проверяем количество карточек (2 или 3)
     if #cardIds < 2 or #cardIds > 3 then
         return false, "Для слияния нужно 2 или 3 карточки"
     end
     
-    -- Загружаем карточки из стека
     local cards = {}
     for _, cardId in ipairs(cardIds) do
         local card = ArmyService.GetCardFromStack(player, cardId)
@@ -165,18 +151,12 @@ function CraftingService.MergeCards(player: Player, cardIds: { string })
         table.insert(cards, card)
     end
     
-    -- Пытаемся найти рецепт
-    local outputUnitType = nil
+    local outputUnitType = CheckSpecialRecipe(cards)
     
-    -- Сначала проверяем специальные рецепты
-    outputUnitType = CheckSpecialRecipe(cards)
-    
-    -- Если нет, проверяем рецепты 3x
     if not outputUnitType and #cards == 3 then
         outputUnitType = CheckMerge3Recipe(cards)
     end
     
-    -- Если нет, проверяем рецепты 2x
     if not outputUnitType and #cards == 2 then
         outputUnitType = CheckMerge2Recipe(cards)
     end
@@ -185,79 +165,61 @@ function CraftingService.MergeCards(player: Player, cardIds: { string })
         return false, "Нет подходящего рецепта для этих карточек"
     end
     
-    -- Проверяем стоимость маны
     local mergeCost = BaseStats.Mana.ActionCost.Merge
     if playerData.Mana.Current < mergeCost then
         return false, `Недостаточно маны (нужно ${mergeCost}, есть ${playerData.Mana.Current})`
     end
     
-    -- Тратим ману
     local success = ArmyService.SpendMana(player, mergeCost, Enums.CubeAction.Merge)
     if not success then
         return false, "Не удалось списать ману"
     end
     
-    -- Удаляем исходные карточки
     for _, cardId in ipairs(cardIds) do
         ArmyService.RemoveCardFromStack(player, cardId)
     end
     
-    -- Создаем новую карточку
     local newCard = CreateCardFromRecipe(outputUnitType, true)
-    
-    -- Добавляем в стек
     ArmyService.AddCardToStack(player, newCard)
     
-    -- Обновляем статистику
     playerData.TotalMerges = (playerData.TotalMerges or 0) + 1
     
-    print(`[CraftingService] 🔮 ${player.Name} слил ${#cards} карточек → ${outputUnitType} (${newCard.CardId})`)
+    print(`[CraftingService] 🔮 ${player.Name} слил ${#cards} карточек → ${outputUnitType}`)
     
     return true, newCard
 end
 
--- Усилить карточку (добавить мод)
--- @param player: Player - игрок
--- @param cardId: string - ID карточки
--- @param buffType: string - тип баффа (из Enums.BuffType)
--- @return boolean, string - успех, сообщение
-function CraftingService.EnhanceCard(player: Player, cardId: string, buffType: string)
-    -- Получаем данные игрока
+function CraftingService.EnhanceCard(player, cardId, buffType)
     local playerData = ArmyService.GetPlayerData(player)
     if not playerData then
         return false, "Ошибка загрузки данных игрока"
     end
     
-    -- Получаем карточку
     local card = ArmyService.GetCardFromStack(player, cardId)
     if not card then
         return false, "Карточка не найдена в стеке"
     end
     
-    -- Получаем данные баффа
-    local buffData = require(ReplicatedStorage.Constants.Buffs)[buffType]
+    local Buffs = require(ReplicatedStorage.Constants.Buffs)
+    local buffData = Buffs[buffType]
     if not buffData then
         return false, "Неизвестный тип усиления"
     end
     
-    -- Проверяем, есть ли уже такой бафф
     if card.Modifiers and card.Modifiers[buffType] then
         return false, "У карточки уже есть это усиление"
     end
     
-    -- Проверяем стоимость маны
     local enhanceCost = buffData.Cost or BaseStats.Mana.ActionCost.Enhance
     if playerData.Mana.Current < enhanceCost then
         return false, `Недостаточно маны (нужно ${enhanceCost}, есть ${playerData.Mana.Current})`
     end
     
-    -- Тратим ману
     local success = ArmyService.SpendMana(player, enhanceCost, Enums.CubeAction.Enhance)
     if not success then
         return false, "Не удалось списать ману"
     end
     
-    -- Добавляем бафф к карточке
     card.Modifiers = card.Modifiers or {}
     card.Modifiers[buffType] = {
         Value = buffData.Value,
@@ -267,10 +229,9 @@ function CraftingService.EnhanceCard(player: Player, cardId: string, buffType: s
     print(`[CraftingService] ⚡ ${player.Name} усилил карточку ${card.UnitTypeId} баффом ${buffType}`)
     
     return true, "Усиление добавлено"
-}
+end
 
--- Получить список доступных рецептов (для UI)
-function CraftingService.GetAvailableRecipes(player: Player): table
+function CraftingService.GetAvailableRecipes(player)
     local playerData = ArmyService.GetPlayerData(player)
     if not playerData then return {} end
     
@@ -280,7 +241,6 @@ function CraftingService.GetAvailableRecipes(player: Player): table
         special = {},
     }
     
-    -- Копируем рецепты из конфига
     for _, recipe in ipairs(Recipes.Merge2 or {}) do
         table.insert(recipes.merge2, recipe)
     end
@@ -301,8 +261,7 @@ end
 -- ============================================
 
 local function SetupRemotes()
-    -- Клиент просит слить карточки
-    RequestMerge.OnServerEvent:Connect(function(player: Player, cardIds: { string })
+    RequestMerge.OnServerEvent:Connect(function(player, cardIds)
         if type(cardIds) ~= "table" or #cardIds < 2 then
             print(`[CraftingService] ⚠️ ${player.Name} отправил некорректный запрос на слияние`)
             return
@@ -312,15 +271,12 @@ local function SetupRemotes()
         
         if success then
             print(`[CraftingService] ✅ ${player.Name} успешно слил карточки`)
-            -- TODO: Отправить подтверждение клиенту с новой карточкой
         else
             print(`[CraftingService] ❌ ${player.Name} не смог слить карточки: ${result}`)
-            -- TODO: Отправить ошибку клиенту
         end
     end)
     
-    -- Клиент просит усилить карточку
-    RequestEnhance.OnServerEvent:Connect(function(player: Player, cardId: string, buffType: string)
+    RequestEnhance.OnServerEvent:Connect(function(player, cardId, buffType)
         if type(cardId) ~= "string" or type(buffType) ~= "string" then
             print(`[CraftingService] ⚠️ ${player.Name} отправил некорректный запрос на усиление`)
             return
@@ -330,10 +286,8 @@ local function SetupRemotes()
         
         if success then
             print(`[CraftingService] ✅ ${player.Name} успешно усилил карточку ${cardId}`)
-            -- TODO: Отправить подтверждение клиенту
         else
             print(`[CraftingService] ❌ ${player.Name} не смог усилить карточку: ${result}`)
-            -- TODO: Отправить ошибку клиенту
         end
     end)
     

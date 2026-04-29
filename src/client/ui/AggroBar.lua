@@ -1,22 +1,24 @@
 -- src/ui/AggroBar.lua
 -- Шкала гнева деревни
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
 local AggroBar = {}
 
 local barFrame = nil
 local fillFrame = nil
 local textLabel = nil
+local currentGui = nil
 
 -- ============================================
 -- СОЗДАНИЕ
 -- ============================================
 
 local function CreateAggroBar()
-    local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
-    if not screenGui then return nil end
+    if barFrame then return barFrame end
+    
+    if not currentGui then
+        warn("[AggroBar] Ошибка: Попытка создания без ScreenGui!")
+        return nil
+    end
     
     barFrame = Instance.new("Frame")
     barFrame.Name = "AggroBar"
@@ -24,7 +26,7 @@ local function CreateAggroBar()
     barFrame.Position = UDim2.new(0.5, -100, 0, 50)
     barFrame.BackgroundColor3 = Color3.fromRGB(30, 20, 20)
     barFrame.BorderSizePixel = 0
-    barFrame.Parent = screenGui
+    barFrame.Parent = currentGui
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
@@ -68,7 +70,6 @@ function AggroBar.Update(aggroLevel: number, maxAggro: number)
     local percent = math.clamp(aggroLevel / maxAggro, 0, 1)
     fillFrame.Size = UDim2.new(percent, 0, 1, 0)
     
-    -- Меняем цвет в зависимости от уровня
     if percent < 0.3 then
         fillFrame.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
         textLabel.Text = `😊 ${math.floor(percent * 100)}%`
@@ -87,8 +88,9 @@ function AggroBar.SetVisible(visible: boolean)
     end
 end
 
-function AggroBar.Init()
+function AggroBar.Init(gui: Instance)
     print("[AggroBar] 📊 Инициализация шкалы агрессии")
+    currentGui = gui
     CreateAggroBar()
     AggroBar.Update(0, 100)
     print("[AggroBar] ✅ Готов")

@@ -1,0 +1,5038 @@
+<roblox version="4">
+  <Item class="ReplicatedStorage" referent="0">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="1">
+      <Properties>
+        <string name="Name">Constants</string>
+      </Properties>
+      <Item class="ModuleScript" referent="2">
+        <Properties>
+          <string name="Name">BaseStats</string>
+          <string name="Source">-- src/constants/BaseStats.lua
+-- Статические данные: юниты, прогрессия, баланс маны
+
+local BaseStats = {
+    -- ============================================
+    -- ПРОГРЕССИЯ НЕКРОМАНТА (уровень → слоты → макс.мана)
+    -- ============================================
+    Progression = {
+        MaxLevel = 50,
+        
+        -- [уровень] = { slots = X, maxMana = Y }
+        Levels = {
+            [1]  = { slots = 3,  maxMana = 50 },
+            [5]  = { slots = 5,  maxMana = 80 },
+            [10] = { slots = 6,  maxMana = 120 },
+            [15] = { slots = 8,  maxMana = 150 },
+            [20] = { slots = 10, maxMana = 200 },
+            [30] = { slots = 12, maxMana = 300 },
+            [40] = { slots = 16, maxMana = 400 },
+            [50] = { slots = 20, maxMana = 500 },
+        },
+        
+        -- Опыт для достижения уровня
+        ExpToLevel = {
+            [1] = 0,
+            [2] = 100,
+            [3] = 250,
+            [4] = 450,
+            [5] = 700,
+            [10] = 3000,
+            [20] = 12000,
+            [30] = 30000,
+            [40] = 60000,
+            [50] = 100000,
+        },
+    },
+    
+    -- ============================================
+    -- МАНА
+    -- ============================================
+    Mana = {
+        CubeEntryCost = 50,          -- Вход в куб
+        RegenBody = 5,               -- +5/сек в режиме тела
+        RegenCube = 2,               -- +2/сек в режиме куба
+        CubeCooldown = 10,           -- 10 секунд после выхода
+        
+        -- Награда за убийства (Некромант в теле)
+        KillRewardNecromancer = {
+            Normal = 20,
+            Elite = 50,
+            Boss = 150,
+        },
+        
+        -- Награда за убийства (Юниты в кубе)
+        KillRewardUnit = {
+            Normal = 3,
+            Elite = 8,
+            Boss = 25,
+        },
+        
+        -- Стоимость действий в кубе
+        ActionCost = {
+            Resurrect = 10,          -- Труп → карточка
+            MoveToSlot = 5,          -- Карточка → слот
+            Revive = 15,             -- Слот → активный юнит
+            Merge = 20,              -- Слияние
+            Enhance = 10,            -- Усиление (базовая цена)
+            Order = 1,               -- Приказ юниту
+        },
+    },
+    
+    -- ============================================
+    -- ЮНИТЫ (статистика)
+    -- ============================================
+    Units = {
+        -- Tier 1 (Обычные)
+        SkeletonWarrior = {
+            Id = "SkeletonWarrior",
+            Name = "Скелет-воин",
+            Tier = 1,
+            BaseHealth = 50,
+            BaseDamage = 10,
+            AttackRange = 8,
+            AttackType = "Melee",
+            SoulCost = 10,
+            ModelId = "rbxassetid://待定",
+        },
+        
+        Zombie = {
+            Id = "Zombie",
+            Name = "Зомби",
+            Tier = 1,
+            BaseHealth = 80,
+            BaseDamage = 8,
+            AttackRange = 6,
+            AttackType = "Melee",
+            SoulCost = 8,
+            ModelId = "rbxassetid://待定",
+        },
+        
+        SkeletonArcher = {
+            Id = "SkeletonArcher",
+            Name = "Скелет-лучник",
+            Tier = 1,
+            BaseHealth = 40,
+            BaseDamage = 12,
+            AttackRange = 40,
+            AttackType = "Ranged",
+            SoulCost = 12,
+            ModelId = "rbxassetid://待定",
+        },
+        
+        -- Tier 2 (Средние)
+        DeathKnight = {
+            Id = "DeathKnight",
+            Name = "Рыцарь смерти",
+            Tier = 2,
+            BaseHealth = 120,
+            BaseDamage = 25,
+            AttackRange = 8,
+            AttackType = "Melee",
+            SoulCost = 20,
+            ModelId = "rbxassetid://待定",
+        },
+        
+        -- Tier 3 (Сильные)
+        IceGolem = {
+            Id = "IceGolem",
+            Name = "Ледяной голем",
+            Tier = 3,
+            BaseHealth = 250,
+            BaseDamage = 35,
+            AttackRange = 12,
+            AttackType = "Melee",
+            SoulCost = 35,
+            ModelId = "rbxassetid://待定",
+        },
+        
+        -- Tier 4 (Элитные)
+        Lich = {
+            Id = "Lich",
+            Name = "Лич",
+            Tier = 4,
+            BaseHealth = 180,
+            BaseDamage = 40,
+            AttackRange = 50,
+            AttackType = "Magic",
+            SoulCost = 50,
+            ModelId = "rbxassetid://待定",
+        },
+        
+        -- Tier 5 (Легендарные)
+        SkeletonDragon = {
+            Id = "SkeletonDragon",
+            Name = "Костяной дракон",
+            Tier = 5,
+            BaseHealth = 500,
+            BaseDamage = 60,
+            AttackRange = 20,
+            AttackType = "Magic",
+            SoulCost = 80,
+            ModelId = "rbxassetid://待定",
+        },
+    },
+    
+    -- ============================================
+    -- ПОГОСТ
+    -- ============================================
+    Graveyard = {
+        GravesCount = 12,            -- Могил на погосте
+        CorpseDecayTime = 45,        -- Труп исчезает через 45 секунд
+        ResurrectAnimationTime = 2,  -- Секунд на анимацию воскрешения
+    },
+    
+    -- ============================================
+    -- КУБ
+    -- ============================================
+    Cube = {
+        BaseHealth = 200,            -- Прочность куба
+        DamageReduction = 0.5,       -- 50% урона в кубе
+    },
+    
+    -- ============================================
+    -- АГРЕССИЯ
+    -- ============================================
+    Aggro = {
+        PerAttack = 5,               -- +5 за нападение на деревню
+        PerKill = 1,                 -- +1 за убийство жителя
+        DecayPerSecond = 0.1,        -- Падает на 0.1/сек
+        MaxAggro = 100,
+        AttackThreshold = 70,        -- При 70+ деревня атакует
+    },
+}
+
+return BaseStats</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">Buffs</string>
+          <string name="Source">-- src/constants/Buffs.lua
+-- Все усиления (моды), которые можно наложить на карточки
+
+local Buffs = {
+    -- ============================================
+    -- Ледяное прикосновение
+    -- ============================================
+    IceTouch = {
+        Id = "IceTouch",
+        Name = "Ледяное прикосновение",
+        Description = "Атаки замедляют врага и наносят дополнительный ледяной урон",
+        EffectType = "Damage",
+        Value = 10,                  -- +10 урона льдом
+        SpeedSlow = 0.3,             -- Замедление на 30%
+        SlowDuration = 2,            -- На 2 секунды
+        Cost = 15,                   -- Стоимость усиления (маны)
+        Icon = "rbxassetid://待定",
+    },
+    
+    -- ============================================
+    -- Ядовитый покров
+    -- ============================================
+    PoisonAura = {
+        Id = "PoisonAura",
+        Name = "Ядовитый покров",
+        Description = "Создает облако яда вокруг юнита, наносящее урон врагам поблизости",
+        EffectType = "Poison",
+        Radius = 15,                 -- Радиус облака
+        DamagePerSecond = 8,         -- 8 урона в секунду
+        Duration = -1,               -- Бесконечно (пока юнит жив)
+        Cost = 20,
+        Icon = "rbxassetid://待定",
+    },
+    
+    -- ============================================
+    -- Невидимость на расстоянии
+    -- ============================================
+    Invisibility = {
+        Id = "Invisibility",
+        Name = "Невидимость",
+        Description = "Юнит становится невидимым для врагов на расстоянии",
+        EffectType = "Invisibility",
+        FadeDistance = 50,           -- На расстоянии >50 студий не виден
+        Cost = 25,
+        Icon = "rbxassetid://待定",
+    },
+    
+    -- ============================================
+    -- Цепь тьмы (дальняя атака)
+    -- ============================================
+    ChainDarkness = {
+        Id = "ChainDarkness",
+        Name = "Цепь тьмы",
+        Description = "Атака цепью, поражающая нескольких врагов",
+        EffectType = "Damage",
+        ChainTargets = 3,            -- Бьет 3 цели
+        ChainRange = 30,             -- Между целями до 30 студий
+        DamageBonus = 5,             -- +5 к урону
+        Cost = 20,
+        Icon = "rbxassetid://待定",
+    },
+    
+    -- ============================================
+    -- Скорость
+    -- ============================================
+    SpeedBoost = {
+        Id = "SpeedBoost",
+        Name = "Призрачная скорость",
+        Description = "Увеличивает скорость передвижения",
+        EffectType = "Speed",
+        Value = 1.5,                 -- В 1.5 раза быстрее
+        Cost = 10,
+        Icon = "rbxassetid://待定",
+    },
+    
+    -- ============================================
+    -- Броня
+    -- ============================================
+    ArmorBoost = {
+        Id = "ArmorBoost",
+        Name = "Костяная броня",
+        Description = "Увеличивает защиту юнита",
+        EffectType = "Defense",
+        Value = 0.3,                 -- -30% входящего урона
+        Cost = 12,
+        Icon = "rbxassetid://待定",
+    },
+}
+
+return Buffs</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="4">
+        <Properties>
+          <string name="Name">Recipes</string>
+          <string name="Source">-- src/constants/Recipes.lua
+-- Рецепты слияния могил/карточек
+
+local Recipes = {
+    -- ============================================
+    -- Слияние 2 могил → случайный юнит следующего тира
+    -- ============================================
+    Merge2 = {
+        -- (Tier1 + Tier1) → Tier2
+        {
+            InputTiers = { 1, 1 },
+            OutputTier = 2,
+            OutputPool = {    -- Из каких юнитов выбирать
+                "DeathKnight",
+                "SkeletonWarlock",
+            },
+        },
+        
+        -- (Tier2 + Tier2) → Tier3
+        {
+            InputTiers = { 2, 2 },
+            OutputTier = 3,
+            OutputPool = {
+                "IceGolem",
+                "ShadowPriest",
+            },
+        },
+        
+        -- (Tier3 + Tier3) → Tier4
+        {
+            InputTiers = { 3, 3 },
+            OutputTier = 4,
+            OutputPool = {
+                "Lich",
+                "VampireLord",
+            },
+        },
+        
+        -- (Tier4 + Tier4) → Tier5
+        {
+            InputTiers = { 4, 4 },
+            OutputTier = 5,
+            OutputPool = {
+                "SkeletonDragon",
+                "Dullahan",
+            },
+        },
+    },
+    
+    -- ============================================
+    -- Слияние 3 могил → гарантированный конкретный юнит
+    -- ============================================
+    Merge3 = {
+        -- 3×Tier1 → конкретный Tier2
+        {
+            InputTiers = { 1, 1, 1 },
+            OutputTier = 2,
+            OutputUnit = "DeathKnight",  -- Гарантированно
+        },
+        
+        -- 3×Tier2 → конкретный Tier3
+        {
+            InputTiers = { 2, 2, 2 },
+            OutputTier = 3,
+            OutputUnit = "IceGolem",
+        },
+        
+        -- 3×Tier3 → конкретный Tier4
+        {
+            InputTiers = { 3, 3, 3 },
+            OutputTier = 4,
+            OutputUnit = "Lich",
+        },
+        
+        -- 3×Tier4 → конкретный Tier5
+        {
+            InputTiers = { 4, 4, 4 },
+            OutputTier = 5,
+            OutputUnit = "SkeletonDragon",
+        },
+    },
+    
+    -- ============================================
+    -- Специальные рецепты (уникальные)
+    -- ============================================
+    SpecialRecipes = {
+        -- 2×Ледяной голем + 1×Лич → Ледяной Лич (уникальный)
+        {
+            InputUnits = { "IceGolem", "IceGolem", "Lich" },
+            OutputUnit = "FrostLich",
+            OutputTier = 5,
+            Description = "Союз льда и магии",
+        },
+        
+        -- 1×Рыцарь смерти + 2×Скелет-лучник → Темный стрелок
+        {
+            InputUnits = { "DeathKnight", "SkeletonArcher", "SkeletonArcher" },
+            OutputUnit = "DarkRanger",
+            OutputTier = 4,
+            Description = "Проклятый лучник",
+        },
+    },
+}
+
+return Recipes</string>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="5">
+      <Properties>
+        <string name="Name">Shared</string>
+      </Properties>
+      <Item class="ModuleScript" referent="6">
+        <Properties>
+          <string name="Name">Enums</string>
+          <string name="Source">-- src/shared/Enums.lua
+-- АКТУАЛЬНАЯ ВЕРСИЯ от 29 апреля 2026
+
+local Enums = {
+    -- ============================================
+    -- Режимы игры
+    -- ============================================
+    GameMode = {
+        Body = "Body",     -- Режим тела (управляем некромантом)
+        Cube = "Cube",     -- Режим куба (управляем армией)
+    },
+    
+    -- ============================================
+    -- Редкость юнитов (Tier)
+    -- ============================================
+    UnitTier = {
+        Tier1 = 1,   -- Обычный (скелет, зомби)
+        Tier2 = 2,   -- Средний (рыцарь, лучник)
+        Tier3 = 3,   -- Сильный (огненный голем)
+        Tier4 = 4,   -- Элитный (рыцарь смерти)
+        Tier5 = 5,   -- Легендарный (дракон-скелет)
+    },
+    
+    -- ============================================
+    -- Тип атаки
+    -- ============================================
+    AttackType = {
+        Melee = "Melee",   -- Ближний бой
+        Ranged = "Ranged", -- Дальний бой
+        Magic = "Magic",   -- Магия
+    },
+    
+    -- ============================================
+    -- Типы баффов (усилений карточек)
+    -- ============================================
+    BuffType = {
+        IceTouch = "IceTouch",           -- Ледяное прикосновение (+урон, замедление)
+        PoisonAura = "PoisonAura",       -- Ядовитый покров (облако яда)
+        Invisibility = "Invisibility",   -- Невидимость на расстоянии
+        ChainDarkness = "ChainDarkness", -- Цепь тьмы (дальняя атака)
+        SpeedBoost = "SpeedBoost",       -- Скорость
+        ArmorBoost = "ArmorBoost",       -- Броня
+    },
+    
+    -- ============================================
+    -- Источники маны
+    -- ============================================
+    ManaSource = {
+        PassiveBody = "PassiveBody",     -- Пассивная в теле (+5/сек)
+        PassiveCube = "PassiveCube",     -- Пассивная в кубе (+2/сек)
+        KillByNecromancer = "KillByNecromancer",   -- Убийство некромантом (+20/50/150)
+        KillByUnit = "KillByUnit",       -- Убийство юнитом (+3/8/25)
+        QuestReward = "QuestReward",     -- Награда за квест
+    },
+    
+    -- ============================================
+    -- Действия в кубе (тратят ману)
+    -- ============================================
+    CubeAction = {
+        Enter = "Enter",                 -- Вход в куб (-50)
+        Resurrect = "Resurrect",         -- Воскресить труп → карточка (-10)
+        MoveToSlot = "MoveToSlot",       -- Переместить карточку в слот (-5)
+        Revive = "Revive",               -- Оживить юнита из слота (-15)
+        Merge = "Merge",                 -- Слияние могил / карточек (-20)
+        Enhance = "Enhance",             -- Усиление карточки (-10-25)
+        Order = "Order",                 -- Отдать приказ юниту (-1-2)
+    },
+    
+    -- ============================================
+    -- Типы врагов
+    -- ============================================
+    EnemyType = {
+        Wild = "Wild",           -- Дикий зверь
+        VillageMilitia = "VillageMilitia",  -- Ополчение деревни
+        CityGuard = "CityGuard",            -- Городская стража
+        Elite = "Elite",                    -- Элитный враг
+        Boss = "Boss",                      -- Босс
+    },
+    
+    -- ============================================
+    -- События (для Remotes)
+    -- ============================================
+    RemoteEvent = {
+        -- Клиент → Сервер
+        EnterCube = "EnterCube",
+        ExitCube = "ExitCube",
+        ResurrectCorpse = "ResurrectCorpse",
+        MergeGraves = "MergeGraves",
+        EnhanceCard = "EnhanceCard",
+        OrderUnit = "OrderUnit",
+        
+        -- Сервер → Клиент
+        UpdateMana = "UpdateMana",
+        UpdateCooldown = "UpdateCooldown",
+        UpdateArmy = "UpdateArmy",
+        UpdateSoulStack = "UpdateSoulStack",
+        UpdateAggro = "UpdateAggro",
+        CombatResult = "CombatResult",
+    },
+}
+
+return Enums</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="7">
+        <Properties>
+          <string name="Name">Types</string>
+          <string name="Source">-- src/shared/Types.lua
+-- Концепция: Некромант с двумя режимами (Тело + Куб), мана как ресурс, прогрессия до 50 уровня
+
+-- ============================================
+-- ТИП: UnitStats (статические характеристики типа юнита)
+-- ============================================
+export type UnitStats = {
+    Id: string,                    -- Уникальный ID типа (например "SkeletonWarrior")
+    Name: string,                  -- Отображаемое имя
+    Tier: number,                  -- 1★ до 5★ (влияет на силу)
+    BaseHealth: number,            -- Максимальное здоровье
+    BaseDamage: number,            -- Базовый урон
+    AttackRange: number,           -- Дальность атаки (студиевые единицы)
+    AttackType: "Melee" | "Ranged" | "Magic",
+    ModelId: string,               -- Asset ID модели в Roblox
+    SoulValue: number,             -- Ценность в "душах" (для баланса мержа)
+}
+
+-- ============================================
+-- ТИП: ActiveUnit (юнит в активном слоте)
+-- ============================================
+export type ActiveUnit = {
+    InstanceId: string,            -- Уникальный ID этого экземпляра
+    UnitTypeId: string,            -- Ссылка на UnitStats.Id
+    CurrentHealth: number,         -- Текущее здоровье
+    Buffs: { [string]: BuffData }, -- Активные баффы
+    IsAlive: boolean,              -- Жив ли сейчас
+    SlotIndex: number,             -- В каком слоте (1-20)
+}
+
+-- ============================================
+-- ТИП: Card (карточка в стеке душ)
+-- ============================================
+export type Card = {
+    CardId: string,                -- Уникальный ID карточки
+    UnitTypeId: string,            -- Какой юнит можно оживить
+    Modifiers: { [string]: any },  -- Усиления (лед, яд, невидимость и т.д.)
+    IsMerged: boolean,             -- Получен ли через мерж?
+}
+
+-- ============================================
+-- ТИП: BuffData
+-- ============================================
+export type BuffData = {
+    BuffType: string,              -- Из Enums.BuffType
+    Value: number,                 -- Сила эффекта
+    RemainingTime: number,         -- Оставшееся время (-1 = постоянно)
+}
+
+-- ============================================
+-- ТИП: ManaData (вся информация о мане игрока)
+-- ============================================
+export type ManaData = {
+    Current: number,               -- Текущая мана (0 - MaxMana)
+    Max: number,                   -- Максимум маны (зависит от уровня)
+    RegenBody: number,             -- Регенерация в режиме тела (+5/сек)
+    RegenCube: number,             -- Регенерация в режиме куба (+2/сек)
+}
+
+-- ============================================
+-- ТИП: CubModeData (состояние куба)
+-- ============================================
+export type CubModeData = {
+    IsActive: boolean,             -- В кубе ли сейчас игрок
+    CooldownEndTime: number,       -- Когда закончится кулдаун (os.time() + 10)
+    BodyPosition: Vector3,         -- Где стоит тело, пока игрок в кубе
+    BodyHealth: number,            -- Прочность куба (броня)
+}
+
+-- ============================================
+-- ТИП: PlayerData (ВСЕ данные игрока, сохраняемые между сессиями)
+-- ============================================
+export type PlayerData = {
+    -- Прогрессия
+    Level: number,                 -- 1-50
+    Experience: number,            -- Текущий опыт
+    NextLevelExp: number,          -- Сколько нужно до следующего уровня
+    
+    -- Ресурсы
+    Mana: ManaData,
+    
+    -- Армия
+    MaxSlots: number,              -- 3 → 20 (растет с уровнем)
+    ActiveSlots: { [number]: ActiveUnit? },  -- Ключ 1..MaxSlots
+    
+    -- Стек душ (карточки)
+    SoulStack: { [string]: Card }, -- Ключ = CardId
+    
+    -- База / Прогресс мира
+    AggroLevel: number,            -- Уровень агрессии деревни (0-100)
+    ConqueredVillages: { [string]: boolean }, -- Какие деревни захвачены
+    
+    -- Статистика (для достижений)
+    TotalKills: number,            -- Всего убийств (некромант + юниты)
+    TotalResurrections: number,    -- Всего воскрешений
+    TotalMerges: number,           -- Всего мержей
+}
+
+-- ============================================
+-- ТИП: ServerState (состояние мира на сервере)
+-- ============================================
+export type ServerState = {
+    PlayersData: { [userId: number]: PlayerData },
+    GlobalAggro: number,           -- Глобальный уровень агрессии
+    TimeOfDay: number,             -- Время суток (влияет на врагов?)
+}
+
+-- ============================================
+-- ТИП: CombatResult (результат боя)
+-- ============================================
+export type CombatResult = {
+    AttackerId: string,            -- Кто атаковал (UnitId или "Necromancer")
+    TargetId: string,              -- Цель
+    Damage: number,                -- Нанесенный урон
+    TargetDied: boolean,           -- Умерла ли цель
+    ManaGained: number,            -- Сколько маны получено за убийство
+    ExperienceGained: number,      -- Сколько опыта получено
+}</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="8">
+        <Properties>
+          <string name="Name">Utils</string>
+          <string name="Source"></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Script" referent="9">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+      <token name="RunContext">0</token>
+      <string name="Source">-- src/server/Init.server.lua
+-- ТОЧКА ВХОДА СЕРВЕРА — ЗАПУСК ВСЕХ СЕРВИСОВ
+
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+print("=" :rep(60))
+print("🧙‍♂️ NECROMANCER GAME - СЕРВЕР ЗАПУЩЕН")
+print("=" :rep(60))
+
+-- Загружаем конфиги
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Buffs = require(ReplicatedStorage.Constants.Buffs)
+local Recipes = require(ReplicatedStorage.Constants.Recipes)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+
+print("[Init] 📊 Конфиги загружены")
+print(string.format("   - Юнитов: %d", table.count(BaseStats.Units)))
+print(string.format("   - Баффов: %d", table.count(Buffs)))
+print(string.format("   - Рецептов: %d (2x), %d (3x), %d (спец)",
+    #(Recipes.Merge2 or {}),
+    #(Recipes.Merge3 or {}),
+    #(Recipes.SpecialRecipes or {})))
+
+-- ============================================
+-- ЗАПУСК СЕРВИСОВ (по порядку зависимостей)
+-- ============================================
+
+-- 1. ArmyService (ядро: мана, уровни, слоты, стек)
+local ArmyService = require(ServerStorage.Modules.ArmyService)
+ArmyService.Init()
+
+-- 2. CorpseManager (таймеры гниения)
+local CorpseManager = require(ServerStorage.Modules.CorpseManager)
+CorpseManager.Start()
+
+-- 3. RitualService (воскрешение трупов)
+local RitualService = require(ServerStorage.Modules.RitualService)
+RitualService.Init(ArmyService, CorpseManager)
+
+-- 4. UnitFactory (спавн юнитов в мире)
+local UnitFactory = require(ServerStorage.Modules.UnitFactory)
+UnitFactory.Init(ArmyService)
+
+-- 5. CraftingService (слияние карточек)
+local CraftingService = require(ServerStorage.Modules.CraftingService)
+CraftingService.Init(ArmyService)
+
+-- 6. AggroService (гнев деревни)
+local AggroService = require(ServerStorage.Modules.AggroService)
+AggroService.Init(ArmyService)
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ (которые уже в игре)
+-- ============================================
+
+for _, player in ipairs(Players:GetPlayers()) do
+    AggroService.InitPlayer(player)
+    print(`[Init] Инициализирована агрессия для ${player.Name}`)
+end
+
+-- Подписка на новых игроков
+Players.PlayerAdded:Connect(function(player)
+    AggroService.InitPlayer(player)
+    print(`[Init] 👋 ${player.Name} присоединился, агрессия инициализирована`)
+end)
+
+print("=" :rep(60))
+print("[Init] ✅ ВСЕ СЕРВИСЫ ЗАГРУЖЕНЫ:")
+print("   1. ArmyService     - мана, уровни, слоты, стек карточек")
+print("   2. CorpseManager   - таймеры гниения трупов")
+print("   3. RitualService   - воскрешение трупов")
+print("   4. UnitFactory     - спавн юнитов, AI, бой")
+print("   5. CraftingService - слияние карточек")
+print("   6. AggroService    - гнев деревни")
+print("=" :rep(60))
+print("[Init] 🎮 СЕРВЕР ГОТОВ К ПРИЕМУ ИГРОКОВ")
+print("=" :rep(60))
+
+-- Вспомогательная функция
+function table.count(t)
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end</string>
+    </Properties>
+    <Item class="Script" referent="10">
+      <Properties>
+        <string name="Name">DataLoader</string>
+        <token name="RunContext">0</token>
+        <string name="Source"></string>
+      </Properties>
+    </Item>
+    <Item class="Script" referent="11">
+      <Properties>
+        <string name="Name">GameManager</string>
+        <token name="RunContext">0</token>
+        <string name="Source"></string>
+      </Properties>
+    </Item>
+    <Item class="Script" referent="12">
+      <Properties>
+        <string name="Name">Init</string>
+        <token name="RunContext">0</token>
+        <string name="Source">-- src/server/Init.server.lua
+-- ТОЧКА ВХОДА СЕРВЕРА — ЗАПУСК ВСЕХ СЕРВИСОВ
+
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+print("=" :rep(60))
+print("🧙‍♂️ NECROMANCER GAME - СЕРВЕР ЗАПУЩЕН")
+print("=" :rep(60))
+
+-- Загружаем конфиги
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Buffs = require(ReplicatedStorage.Constants.Buffs)
+local Recipes = require(ReplicatedStorage.Constants.Recipes)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+
+print("[Init] 📊 Конфиги загружены")
+print(string.format("   - Юнитов: %d", table.count(BaseStats.Units)))
+print(string.format("   - Баффов: %d", table.count(Buffs)))
+print(string.format("   - Рецептов: %d (2x), %d (3x), %d (спец)",
+    #(Recipes.Merge2 or {}),
+    #(Recipes.Merge3 or {}),
+    #(Recipes.SpecialRecipes or {})))
+
+-- ============================================
+-- ЗАПУСК СЕРВИСОВ (по порядку зависимостей)
+-- ============================================
+
+-- 1. ArmyService (ядро: мана, уровни, слоты, стек)
+local ArmyService = require(ServerStorage.Modules.ArmyService)
+ArmyService.Init()
+
+-- 2. CorpseManager (таймеры гниения)
+local CorpseManager = require(ServerStorage.Modules.CorpseManager)
+CorpseManager.Start()
+
+-- 3. RitualService (воскрешение трупов)
+local RitualService = require(ServerStorage.Modules.RitualService)
+RitualService.Init(ArmyService, CorpseManager)
+
+-- 4. UnitFactory (спавн юнитов в мире)
+local UnitFactory = require(ServerStorage.Modules.UnitFactory)
+UnitFactory.Init(ArmyService)
+
+-- 5. CraftingService (слияние карточек)
+local CraftingService = require(ServerStorage.Modules.CraftingService)
+CraftingService.Init(ArmyService)
+
+-- 6. AggroService (гнев деревни)
+local AggroService = require(ServerStorage.Modules.AggroService)
+AggroService.Init(ArmyService)
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ (которые уже в игре)
+-- ============================================
+
+for _, player in ipairs(Players:GetPlayers()) do
+    AggroService.InitPlayer(player)
+    print(`[Init] Инициализирована агрессия для ${player.Name}`)
+end
+
+-- Подписка на новых игроков
+Players.PlayerAdded:Connect(function(player)
+    AggroService.InitPlayer(player)
+    print(`[Init] 👋 ${player.Name} присоединился, агрессия инициализирована`)
+end)
+
+print("=" :rep(60))
+print("[Init] ✅ ВСЕ СЕРВИСЫ ЗАГРУЖЕНЫ:")
+print("   1. ArmyService     - мана, уровни, слоты, стек карточек")
+print("   2. CorpseManager   - таймеры гниения трупов")
+print("   3. RitualService   - воскрешение трупов")
+print("   4. UnitFactory     - спавн юнитов, AI, бой")
+print("   5. CraftingService - слияние карточек")
+print("   6. AggroService    - гнев деревни")
+print("=" :rep(60))
+print("[Init] 🎮 СЕРВЕР ГОТОВ К ПРИЕМУ ИГРОКОВ")
+print("=" :rep(60))
+
+-- Вспомогательная функция
+function table.count(t)
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end</string>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="ServerStorage" referent="13">
+    <Properties>
+      <string name="Name">ServerStorage</string>
+    </Properties>
+    <Item class="Folder" referent="14">
+      <Properties>
+        <string name="Name">Modules</string>
+      </Properties>
+      <Item class="ModuleScript" referent="15">
+        <Properties>
+          <string name="Name">AggroService</string>
+          <string name="Source">-- src/server-modules/AggroService.lua
+-- Управление гневом деревни
+-- ВЕРСИЯ 2.0 — С REMOTEEVENT'АМИ И ПОЛНОЙ СВЯЗЬЮ С КЛИЕНТОМ
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+
+-- ============================================
+-- RemoteEvents для связи с клиентом
+-- ============================================
+
+local RemoteEventsFolder = ReplicatedStorage:FindFirstChild("ArmyRemoteEvents")
+if not RemoteEventsFolder then
+    RemoteEventsFolder = Instance.new("Folder")
+    RemoteEventsFolder.Name = "ArmyRemoteEvents"
+    RemoteEventsFolder.Parent = ReplicatedStorage
+end
+
+local UpdateAggroEvent = Instance.new("RemoteEvent")
+UpdateAggroEvent.Name = "UpdateAggro"
+UpdateAggroEvent.Parent = RemoteEventsFolder
+
+-- ============================================
+-- Константы из конфига
+-- ============================================
+local PER_ATTACK = BaseStats.Aggro.PerAttack or 5
+local PER_KILL = BaseStats.Aggro.PerKill or 1
+local DECAY_PER_SECOND = BaseStats.Aggro.DecayPerSecond or 0.1
+local MAX_AGGRO = BaseStats.Aggro.MaxAggro or 100
+local ATTACK_THRESHOLD = BaseStats.Aggro.AttackThreshold or 70
+
+-- ============================================
+-- Хранилище данных по игрокам
+-- ============================================
+-- AggroData[userId] = {
+--     CurrentAggro = number,     -- 0-100
+--     LastAttackTime = number,
+--     IsUnderAttack = boolean,
+--     AttackCooldown = number,
+-- }
+
+local AggroData = {}
+
+-- Ссылка на погост игрока
+local PlayerPogosts = {}  -- [userId] = Instance
+
+-- Сервисы (заполняются при Init)
+local ArmyService = nil
+
+-- ============================================
+-- Отправка обновлений клиенту
+-- ============================================
+
+local function SendAggroUpdate(player: Player, aggroLevel: number)
+    UpdateAggroEvent:FireClient(player, aggroLevel, MAX_AGGRO)
+    print(`[AggroService] 📊 Агрессия ${player.Name}: ${aggroLevel}/${MAX_AGGRO}`)
+end
+
+-- ============================================
+-- Создание вражеского отряда
+-- ============================================
+
+local function SpawnAttackParty(player: Player, aggroLevel: number)
+    local pogost = PlayerPogosts[player.UserId]
+    if not pogost then
+        print(`[AggroService] ⚠️ Нет погоста для игрока ${player.Name}, атака отменена`)
+        return
+    end
+    
+    local unitCount = math.min(math.floor(aggroLevel / 20) + 1, 5)
+    
+    local enemyTypes = {"Villager", "Militia"}
+    if aggroLevel >= 50 then
+        table.insert(enemyTypes, "Archer")
+    end
+    if aggroLevel >= 80 then
+        table.insert(enemyTypes, "Knight")
+    end
+    
+    print(`[AggroService] ⚔️ Деревня атакует погост ${player.Name}! Уровень агро: ${aggroLevel}, юнитов: ${unitCount}`)
+    
+    local pogostPosition = pogost:GetPivot()
+    if not pogostPosition then
+        pogostPosition = pogost.Position
+    end
+    local radius = 30
+    
+    for i = 1, unitCount do
+        local randomAngle = math.random() * 2 * math.pi
+        local offsetX = math.cos(randomAngle) * radius
+        local offsetZ = math.sin(randomAngle) * radius
+        local spawnPos = pogostPosition + Vector3.new(offsetX, 0, offsetZ)
+        
+        local enemyType = enemyTypes[math.random(1, #enemyTypes)]
+        
+        -- TODO: Создать модель врага через UnitFactory
+        print(`[AggroService]    - Создан ${enemyType} на позиции ${spawnPos}`)
+    end
+    
+    local data = AggroData[player.UserId]
+    if data then
+        data.AttackCooldown = os.time() + 60
+    end
+end
+
+-- ============================================
+-- Проверка и запуск атаки
+-- ============================================
+
+local function CheckAndTriggerAttack(player: Player, aggroLevel: number)
+    local data = AggroData[player.UserId]
+    if not data then return end
+    
+    if data.AttackCooldown and os.time() &lt; data.AttackCooldown then
+        return
+    end
+    
+    if data.IsUnderAttack then
+        return
+    end
+    
+    if aggroLevel >= ATTACK_THRESHOLD then
+        data.IsUnderAttack = true
+        SpawnAttackParty(player, aggroLevel)
+        
+        local newAggro = math.max(0, aggroLevel - 30)
+        data.CurrentAggro = newAggro
+        SendAggroUpdate(player, newAggro)
+        
+        task.delay(120, function()
+            if AggroData[player.UserId] then
+                AggroData[player.UserId].IsUnderAttack = false
+                print(`[AggroService] ✅ Атака на погост ${player.Name} завершена`)
+            end
+        end)
+    end
+end
+
+-- ============================================
+-- ОСНОВНЫЕ ФУНКЦИИ (API)
+-- ============================================
+
+local AggroService = {}
+
+function AggroService.InitPlayer(player: Player)
+    local userId = player.UserId
+    if AggroData[userId] then
+        return
+    end
+    
+    AggroData[userId] = {
+        CurrentAggro = 0,
+        LastAttackTime = os.time(),
+        IsUnderAttack = false,
+        AttackCooldown = 0,
+    }
+    
+    SendAggroUpdate(player, 0)
+    print(`[AggroService] 📊 Инициализирована агрессия для ${player.Name}`)
+end
+
+function AggroService.AddAggro(player: Player, amount: number?, reason: string)
+    local data = AggroData[player.UserId]
+    if not data then
+        AggroService.InitPlayer(player)
+        data = AggroData[player.UserId]
+    end
+    
+    local addAmount = amount or PER_ATTACK
+    local newAggro = math.min(data.CurrentAggro + addAmount, MAX_AGGRO)
+    data.CurrentAggro = newAggro
+    data.LastAttackTime = os.time()
+    
+    print(`[AggroService] 😠 ${player.Name} +${addAmount} агрессии (${reason}). Теперь: ${newAggro}/${MAX_AGGRO}`)
+    
+    SendAggroUpdate(player, newAggro)
+    CheckAndTriggerAttack(player, newAggro)
+end
+
+function AggroService.AddKillAggro(player: Player, unitType: string)
+    AggroService.AddAggro(player, PER_KILL, `убийство ${unitType}`)
+end
+
+function AggroService.ReduceAggro(player: Player, amount: number, reason: string)
+    local data = AggroData[player.UserId]
+    if not data then return end
+    
+    local newAggro = math.max(0, data.CurrentAggro - amount)
+    data.CurrentAggro = newAggro
+    
+    print(`[AggroService] 🕊️ ${player.Name} -${amount} агрессии (${reason}). Теперь: ${newAggro}/${MAX_AGGRO}`)
+    
+    SendAggroUpdate(player, newAggro)
+end
+
+function AggroService.SetAggro(player: Player, value: number, reason: string)
+    local data = AggroData[player.UserId]
+    if not data then
+        AggroService.InitPlayer(player)
+        data = AggroData[player.UserId]
+    end
+    
+    local newAggro = math.clamp(value, 0, MAX_AGGRO)
+    data.CurrentAggro = newAggro
+    data.LastAttackTime = os.time()
+    
+    print(`[AggroService] 🎯 ${player.Name} установлена агрессия ${newAggro} (${reason})`)
+    
+    SendAggroUpdate(player, newAggro)
+    CheckAndTriggerAttack(player, newAggro)
+end
+
+function AggroService.GetAggroLevel(player: Player): number
+    local data = AggroData[player.UserId]
+    return data and data.CurrentAggro or 0
+end
+
+function AggroService.RegisterPogost(player: Player, pogostModel: Instance)
+    PlayerPogosts[player.UserId] = pogostModel
+    print(`[AggroService] 🏚️ Зарегистрирован погост для ${player.Name}`)
+end
+
+function AggroService.IsUnderAttack(player: Player): boolean
+    local data = AggroData[player.UserId]
+    return data and data.IsUnderAttack or false
+end
+
+function AggroService.GetMaxAggro(): number
+    return MAX_AGGRO
+end
+
+-- ============================================
+-- Цикл пассивного снижения агрессии
+-- ============================================
+
+local decayConnection = nil
+
+function AggroService.StartDecay()
+    if decayConnection then
+        return
+    end
+    
+    print(`[AggroService] ⏰ Запущено пассивное снижение агрессии (${DECAY_PER_SECOND}/сек)`)
+    
+    decayConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        for userId, data in pairs(AggroData) do
+            if data.CurrentAggro > 0 and not data.IsUnderAttack then
+                local decayAmount = DECAY_PER_SECOND * deltaTime
+                local newAggro = math.max(0, data.CurrentAggro - decayAmount)
+                
+                if newAggro ~= data.CurrentAggro then
+                    data.CurrentAggro = newAggro
+                    
+                    local player = Players:GetPlayerByUserId(userId)
+                    if player then
+                        SendAggroUpdate(player, newAggro)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function AggroService.StopDecay()
+    if decayConnection then
+        decayConnection:Disconnect()
+        decayConnection = nil
+        print("[AggroService] ⏹️ Пассивное снижение агрессии остановлено")
+    end
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function AggroService.Init(armyService)
+    ArmyService = armyService
+    
+    if not ArmyService then
+        error("[AggroService] ❌ Не удалось инициализировать: ArmyService отсутствует")
+    end
+    
+    AggroService.StartDecay()
+    
+    print("[AggroService] ========== ИНИЦИАЛИЗАЦИЯ ==========")
+    print("   - Зависимости: ArmyService ✅")
+    print("   - RemoteEvent: UpdateAggro ✅")
+    print("   - За атаку на деревню: +", PER_ATTACK, "агро")
+    print("   - За убийство жителя: +", PER_KILL, "агро")
+    print("   - Пассивное снижение:", DECAY_PER_SECOND, "агро/сек")
+    print("   - Порог атаки деревни:", ATTACK_THRESHOLD, "агро")
+    print("[AggroService] ✅ Готов к работе")
+end
+
+return AggroService</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="16">
+        <Properties>
+          <string name="Name">ArmyService</string>
+          <string name="Source">-- src/server-modules/ArmyService.lua
+-- Управление армией, маной, прогрессией, уровнями
+-- ВЕРСИЯ 3.0 — С REMOTEEVENT'АМИ И ПОЛНОЙ СВЯЗЬЮ С КЛИЕНТОМ
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Types = require(ReplicatedStorage.Shared.Types)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+
+-- ============================================
+-- RemoteEvents для связи с клиентом
+-- ============================================
+
+local RemoteEventsFolder = Instance.new("Folder")
+RemoteEventsFolder.Name = "ArmyRemoteEvents"
+RemoteEventsFolder.Parent = ReplicatedStorage
+
+-- События сервер → клиент
+local UpdateManaEvent = Instance.new("RemoteEvent")
+UpdateManaEvent.Name = "UpdateMana"
+UpdateManaEvent.Parent = RemoteEventsFolder
+
+local UpdateArmyEvent = Instance.new("RemoteEvent")
+UpdateArmyEvent.Name = "UpdateArmy"
+UpdateArmyEvent.Parent = RemoteEventsFolder
+
+local UpdateSoulStackEvent = Instance.new("RemoteEvent")
+UpdateSoulStackEvent.Name = "UpdateSoulStack"
+UpdateSoulStackEvent.Parent = RemoteEventsFolder
+
+local UpdateLevelEvent = Instance.new("RemoteEvent")
+UpdateLevelEvent.Name = "UpdateLevel"
+UpdateLevelEvent.Parent = RemoteEventsFolder
+
+local UpdateCubeCooldownEvent = Instance.new("RemoteEvent")
+UpdateCubeCooldownEvent.Name = "UpdateCubeCooldown"
+UpdateCubeCooldownEvent.Parent = RemoteEventsFolder
+
+-- События клиент → сервер
+local RequestEnterCubeEvent = Instance.new("RemoteEvent")
+RequestEnterCubeEvent.Name = "RequestEnterCube"
+RequestEnterCubeEvent.Parent = RemoteEventsFolder
+
+local RequestExitCubeEvent = Instance.new("RemoteEvent")
+RequestExitCubeEvent.Name = "RequestExitCube"
+RequestExitCubeEvent.Parent = RemoteEventsFolder
+
+-- ============================================
+-- Хранилище данных игроков (в памяти)
+-- ============================================
+local PlayersData = {}  -- [userId] = PlayerData
+
+-- Кулдаун куба для каждого игрока
+local CubeCooldowns = {}  -- [userId] = endTime (os.time())
+
+-- Режим игрока (Body или Cube)
+local PlayerMode = {}  -- [userId] = "Body" or "Cube"
+
+-- ============================================
+-- Вспомогательные функции
+-- ============================================
+
+local function TableCount(t: table): number
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end
+
+local function GetMaxManaByLevel(level: number): number
+    local levels = BaseStats.Progression.Levels
+    local result = 50
+    for lvl, data in pairs(levels) do
+        if level >= lvl and data.maxMana > result then
+            result = data.maxMana
+        end
+    end
+    return result
+end
+
+local function GetSlotsByLevel(level: number): number
+    local levels = BaseStats.Progression.Levels
+    local result = 3
+    for lvl, data in pairs(levels) do
+        if level >= lvl and data.slots > result then
+            result = data.slots
+        end
+    end
+    return result
+end
+
+local function GetExpForLevel(level: number): number
+    local expTable = BaseStats.Progression.ExpToLevel
+    local nextLevel = level + 1
+    return expTable[nextLevel] or 999999
+end
+
+-- ============================================
+-- Отправка обновлений клиенту
+-- ============================================
+
+local function SendManaUpdate(player: Player, data: Types.PlayerData)
+    UpdateManaEvent:FireClient(player, data.Mana.Current, data.Mana.Max)
+end
+
+local function SendArmyUpdate(player: Player, data: Types.PlayerData)
+    UpdateArmyEvent:FireClient(player, data.MaxSlots, data.ActiveSlots)
+end
+
+local function SendSoulStackUpdate(player: Player, data: Types.PlayerData)
+    UpdateSoulStackEvent:FireClient(player, data.SoulStack)
+end
+
+local function SendLevelUpdate(player: Player, data: Types.PlayerData)
+    UpdateLevelEvent:FireClient(player, data.Level, data.Experience, data.NextLevelExp)
+end
+
+local function SendCubeCooldownUpdate(player: Player)
+    local remaining = 0
+    local cooldownEnd = CubeCooldowns[player.UserId] or 0
+    if os.time() &lt; cooldownEnd then
+        remaining = cooldownEnd - os.time()
+    end
+    UpdateCubeCooldownEvent:FireClient(player, remaining)
+end
+
+-- ============================================
+-- Создание новых данных игрока
+-- ============================================
+
+local function CreateNewPlayerData(userId: number): Types.PlayerData
+    local initialLevel = 1
+    local maxMana = GetMaxManaByLevel(initialLevel)
+    local maxSlots = GetSlotsByLevel(initialLevel)
+    
+    return {
+        Level = initialLevel,
+        Experience = 0,
+        NextLevelExp = GetExpForLevel(initialLevel),
+        
+        Mana = {
+            Current = maxMana,
+            Max = maxMana,
+            RegenBody = BaseStats.Mana.RegenBody,
+            RegenCube = BaseStats.Mana.RegenCube,
+        },
+        
+        MaxSlots = maxSlots,
+        ActiveSlots = {},
+        SoulStack = {},
+        
+        AggroLevel = 0,
+        ConqueredVillages = {},
+        
+        TotalKills = 0,
+        TotalResurrections = 0,
+        TotalMerges = 0,
+    }
+end
+
+local function SavePlayerData(userId: number, data: Types.PlayerData)
+    print(`[ArmyService] 💾 Сохранение данных игрока ${userId} (уровень ${data.Level})`)
+end
+
+-- ============================================
+-- Проверка и повышение уровня
+-- ============================================
+
+local function CheckAndApplyLevelUp(player: Player, data: Types.PlayerData)
+    local oldLevel = data.Level
+    local newLevel = oldLevel
+    
+    while newLevel &lt; BaseStats.Progression.MaxLevel do
+        local nextExp = GetExpForLevel(newLevel)
+        if data.Experience >= nextExp then
+            newLevel = newLevel + 1
+        else
+            break
+        end
+    end
+    
+    if newLevel > oldLevel then
+        data.Level = newLevel
+        data.MaxSlots = GetSlotsByLevel(newLevel)
+        data.Mana.Max = GetMaxManaByLevel(newLevel)
+        data.Mana.Current = data.Mana.Max
+        data.NextLevelExp = GetExpForLevel(newLevel)
+        
+        print(`[ArmyService] 🎉 ${player.Name} повысил уровень до ${newLevel}!`)
+        
+        SendLevelUpdate(player, data)
+        SendManaUpdate(player, data)
+        SendArmyUpdate(player, data)
+        
+        SavePlayerData(player.UserId, data)
+    end
+end
+
+-- ============================================
+-- ОСНОВНЫЕ ФУНКЦИИ (API)
+-- ============================================
+
+local ArmyService = {}
+
+function ArmyService.GetPlayerData(player: Player): Types.PlayerData?
+    return PlayersData[player.UserId]
+end
+
+function ArmyService.AddExperience(player: Player, amount: number)
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return end
+    
+    data.Experience += amount
+    print(`[ArmyService] 📈 ${player.Name} +${amount} опыта (всего ${data.Experience})`)
+    
+    CheckAndApplyLevelUp(player, data)
+    SavePlayerData(userId, data)
+end
+
+function ArmyService.AddMana(player: Player, amount: number, source: string)
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return end
+    
+    local oldMana = data.Mana.Current
+    local newMana = math.min(oldMana + amount, data.Mana.Max)
+    data.Mana.Current = newMana
+    
+    print(`[ArmyService] 🔋 ${player.Name} +${amount} маны (${source}). ${oldMana} → ${newMana}/${data.Mana.Max}`)
+    
+    SendManaUpdate(player, data)
+    SavePlayerData(userId, data)
+end
+
+function ArmyService.SpendMana(player: Player, amount: number, action: string): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return false end
+    
+    if data.Mana.Current >= amount then
+        data.Mana.Current -= amount
+        print(`[ArmyService] 💸 ${player.Name} -${amount} маны (${action}). Осталось: ${data.Mana.Current}/${data.Mana.Max}`)
+        
+        SendManaUpdate(player, data)
+        SavePlayerData(userId, data)
+        return true
+    else
+        print(`[ArmyService] ⚠️ ${player.Name} недостаточно маны для ${action} (нужно ${amount}, есть ${data.Mana.Current})`)
+        return false
+    end
+end
+
+function ArmyService.RegisterKill(player: Player, killedBy: string, enemyType: string)
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return end
+    
+    data.TotalKills += 1
+    
+    local manaReward = 0
+    local expReward = 10
+    
+    if killedBy == "Necromancer" then
+        if enemyType == "Normal" then
+            manaReward = BaseStats.Mana.KillRewardNecromancer.Normal
+            expReward = 10
+        elseif enemyType == "Elite" then
+            manaReward = BaseStats.Mana.KillRewardNecromancer.Elite
+            expReward = 50
+        elseif enemyType == "Boss" then
+            manaReward = BaseStats.Mana.KillRewardNecromancer.Boss
+            expReward = 200
+        else
+            manaReward = BaseStats.Mana.KillRewardNecromancer.Normal
+        end
+    elseif killedBy == "Unit" then
+        if enemyType == "Normal" then
+            manaReward = BaseStats.Mana.KillRewardUnit.Normal
+            expReward = 8
+        elseif enemyType == "Elite" then
+            manaReward = BaseStats.Mana.KillRewardUnit.Elite
+            expReward = 30
+        elseif enemyType == "Boss" then
+            manaReward = BaseStats.Mana.KillRewardUnit.Boss
+            expReward = 150
+        else
+            manaReward = BaseStats.Mana.KillRewardUnit.Normal
+        end
+    end
+    
+    if manaReward > 0 then
+        local source = (killedBy == "Necromancer" and "NecromancerKill" or "UnitKill")
+        ArmyService.AddMana(player, manaReward, source)
+    end
+    
+    ArmyService.AddExperience(player, expReward)
+    
+    print(`[ArmyService] 💀 ${player.Name} убил ${enemyType} (${killedBy}) → +${manaReward} маны, +${expReward} опыта`)
+end
+
+-- ============================================
+-- УПРАВЛЕНИЕ КУБОМ
+-- ============================================
+
+function ArmyService.CanEnterCube(player: Player): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return false end
+    
+    local cooldownEnd = CubeCooldowns[userId] or 0
+    if os.time() &lt; cooldownEnd then
+        return false
+    end
+    
+    if data.Mana.Current &lt; BaseStats.Mana.CubeEntryCost then
+        return false
+    end
+    
+    return true
+end
+
+function ArmyService.EnterCube(player: Player): boolean
+    if not ArmyService.CanEnterCube(player) then
+        return false
+    end
+    
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    
+    local success = ArmyService.SpendMana(player, BaseStats.Mana.CubeEntryCost, Enums.CubeAction.Enter)
+    if not success then return false end
+    
+    PlayerMode[userId] = "Cube"
+    
+    print(`[ArmyService] 🧊 ${player.Name} ВОШЕЛ в куб! (режим: ${PlayerMode[userId]})`)
+    
+    return true
+end
+
+function ArmyService.ExitCube(player: Player, isForced: boolean)
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return end
+    
+    CubeCooldowns[userId] = os.time() + BaseStats.Mana.CubeCooldown
+    
+    data.Mana.Current = data.Mana.Max
+    SendManaUpdate(player, data)
+    SendCubeCooldownUpdate(player)
+    
+    PlayerMode[userId] = "Body"
+    
+    local exitType = isForced and "ПРИНУДИТЕЛЬНО" or "ДОБРОВОЛЬНО"
+    print(`[ArmyService] 🧊 ${player.Name} ВЫШЕЛ из куба (${exitType}). Режим: ${PlayerMode[userId]}`)
+end
+
+function ArmyService.GetCubeCooldownRemaining(player: Player): number
+    local userId = player.UserId
+    local cooldownEnd = CubeCooldowns[userId] or 0
+    return math.max(0, cooldownEnd - os.time())
+end
+
+function ArmyService.GetPlayerMode(player: Player): string
+    return PlayerMode[player.UserId] or "Body"
+end
+
+-- ============================================
+-- УПРАВЛЕНИЕ ЮНИТАМИ
+-- ============================================
+
+function ArmyService.AddCardToStack(player: Player, card: Types.Card)
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return end
+    
+    data.SoulStack[card.CardId] = card
+    print(`[ArmyService] 📇 ${player.Name} добавил карточку ${card.UnitTypeId}`)
+    SendSoulStackUpdate(player, data)
+end
+
+function ArmyService.GetCardFromStack(player: Player, cardId: string): Types.Card?
+    local data = PlayersData[player.UserId]
+    return data and data.SoulStack[cardId]
+end
+
+function ArmyService.GetSoulStack(player: Player): { [string]: Types.Card }
+    local data = PlayersData[player.UserId]
+    return data and data.SoulStack or {}
+end
+
+function ArmyService.RemoveCardFromStack(player: Player, cardId: string): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data or not data.SoulStack[cardId] then return false end
+    
+    data.SoulStack[cardId] = nil
+    print(`[ArmyService] 🗑️ ${player.Name} удалил карточку ${cardId}`)
+    SendSoulStackUpdate(player, data)
+    return true
+end
+
+function ArmyService.MoveCardToSlot(player: Player, cardId: string, slotIndex: number): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return false end
+    
+    if slotIndex > data.MaxSlots then
+        print(`[ArmyService] ❌ Слот ${slotIndex} превышает максимум (${data.MaxSlots})`)
+        return false
+    end
+    
+    local card = data.SoulStack[cardId]
+    if not card then
+        print(`[ArmyService] ❌ Карточка ${cardId} не найдена`)
+        return false
+    end
+    
+    if not ArmyService.SpendMana(player, BaseStats.Mana.ActionCost.MoveToSlot, Enums.CubeAction.MoveToSlot) then
+        return false
+    end
+    
+    data.SoulStack[cardId] = nil
+    
+    local unitTypeData = BaseStats.Units[card.UnitTypeId]
+    if not unitTypeData then
+        print(`[ArmyService] ❌ Тип юнита ${card.UnitTypeId} не найден`)
+        return false
+    end
+    
+    data.ActiveSlots[slotIndex] = {
+        InstanceId = cardId,
+        UnitTypeId = card.UnitTypeId,
+        CurrentHealth = unitTypeData.BaseHealth,
+        Buffs = card.Modifiers or {},
+        IsAlive = false,
+        SlotIndex = slotIndex,
+    }
+    
+    print(`[ArmyService] 📦 ${player.Name} переместил ${card.UnitTypeId} в слот ${slotIndex}`)
+    SendArmyUpdate(player, data)
+    SendSoulStackUpdate(player, data)
+    
+    return true
+end
+
+function ArmyService.ReviveUnitInSlot(player: Player, slotIndex: number): boolean
+    local userId = player.UserId
+    local data = PlayersData[userId]
+    if not data then return false end
+    
+    local unit = data.ActiveSlots[slotIndex]
+    if not unit then
+        print(`[ArmyService] ❌ Слот ${slotIndex} пуст`)
+        return false
+    end
+    
+    if unit.IsAlive then
+        print(`[ArmyService] ❌ Юнит в слоте ${slotIndex} уже жив`)
+        return false
+    end
+    
+    if not ArmyService.SpendMana(player, BaseStats.Mana.ActionCost.Revive, Enums.CubeAction.Revive) then
+        return false
+    end
+    
+    unit.IsAlive = true
+    unit.CurrentHealth = BaseStats.Units[unit.UnitTypeId].BaseHealth
+    
+    print(`[ArmyService] ✨ ${player.Name} оживил ${unit.UnitTypeId} в слоте ${slotIndex}`)
+    SendArmyUpdate(player, data)
+    
+    return true
+end
+
+function ArmyService.GetUnitFromSlot(player: Player, slotIndex: number): Types.ActiveUnit?
+    local data = PlayersData[player.UserId]
+    return data and data.ActiveSlots[slotIndex]
+end
+
+function ArmyService.GetActiveSlots(player: Player): { [number]: Types.ActiveUnit? }
+    local data = PlayersData[player.UserId]
+    return data and data.ActiveSlots or {}
+end
+
+function ArmyService.IsSlotEmpty(player: Player, slotIndex: number): boolean
+    local data = PlayersData[player.UserId]
+    return not data or data.ActiveSlots[slotIndex] == nil
+end
+
+-- ============================================
+-- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+-- ============================================
+
+function ArmyService.GetPlayerLevel(player: Player): number
+    local data = PlayersData[player.UserId]
+    return data and data.Level or 1
+end
+
+function ArmyService.GetPlayerMaxMana(player: Player): number
+    local data = PlayersData[player.UserId]
+    return data and data.Mana.Max or 50
+end
+
+function ArmyService.GetPlayerExperience(player: Player): number
+    local data = PlayersData[player.UserId]
+    return data and data.Experience or 0
+end
+
+-- ============================================
+-- ОБРАБОТЧИКИ REMOTEEVENTS
+-- ============================================
+
+local function SetupRemoteEventHandlers()
+    RequestEnterCubeEvent.OnServerEvent:Connect(function(player)
+        ArmyService.EnterCube(player)
+    end)
+    
+    RequestExitCubeEvent.OnServerEvent:Connect(function(player, isForced)
+        ArmyService.ExitCube(player, isForced or false)
+    end)
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function ArmyService.Init()
+    print("[ArmyService] ========== ИНИЦИАЛИЗАЦИЯ ==========")
+    print("[ArmyService] 📊 Загружены балансные числа из BaseStats")
+    print("[ArmyService]    - MaxLevel:", BaseStats.Progression.MaxLevel)
+    print("[ArmyService]    - CubeCooldown:", BaseStats.Mana.CubeCooldown, "сек")
+    print("[ArmyService]    - MaxSlots на 50 уровне:", GetSlotsByLevel(50))
+    
+    SetupRemoteEventHandlers()
+    
+    Players.PlayerAdded:Connect(function(player)
+        print(`[ArmyService] 👋 Игрок ${player.Name} присоединился`)
+        
+        local userId = player.UserId
+        local data = CreateNewPlayerData(userId)
+        PlayersData[userId] = data
+        PlayerMode[userId] = "Body"
+        
+        print(`[ArmyService]    - Уровень: ${data.Level}, Мана: ${data.Mana.Current}/${data.Mana.Max}, Слоты: ${data.MaxSlots}`)
+        
+        SendManaUpdate(player, data)
+        SendArmyUpdate(player, data)
+        SendSoulStackUpdate(player, data)
+        SendLevelUpdate(player, data)
+        SendCubeCooldownUpdate(player)
+        
+        player.AncestryChanged:Connect(function()
+            if player.Parent == nil then
+                SavePlayerData(userId, data)
+                PlayersData[userId] = nil
+                CubeCooldowns[userId] = nil
+                PlayerMode[userId] = nil
+                print(`[ArmyService] 👋 Игрок ${player.Name} вышел`)
+            end
+        end)
+    end)
+    
+    print("[ArmyService] ✅ Инициализация завершена")
+end
+
+return ArmyService</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="17">
+        <Properties>
+          <string name="Name">CorpseManager</string>
+          <string name="Source">-- src/server-modules/CorpseManager.lua
+-- Управление трупами: таймеры гниения, создание, удаление
+-- Труп живет 45 секунд (или значение из BaseStats), затем исчезает
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+
+-- ============================================
+-- Хранилище активных трупов
+-- ============================================
+-- Структура:
+-- Corpses[corpseId] = {
+--     Model = Instance,     -- 3D модель трупа в мире
+--     ExpireTime = number,  -- os.time() + время жизни
+--     UnitTypeId = string,  -- Тип юнита (например "SkeletonWarrior")
+--     Position = Vector3,   -- Позиция для спавна
+--     OwnerId = number,     -- ID игрока, который убил (кому принадлежит труп)
+-- }
+
+local Corpses = {}  -- [corpseId] = corpseData
+local nextCorpseId = 1
+
+-- Время жизни трупа (из конфига, 45 секунд по умолчанию)
+local DECAY_TIME = BaseStats.Graveyard.CorpseDecayTime or 45
+
+-- ============================================
+-- Внутренние функции
+-- ============================================
+
+-- Удалить труп (из мира и из памяти)
+local function DestroyCorpse(corpseId: number)
+    local corpse = Corpses[corpseId]
+    if not corpse then return end
+    
+    print(`[CorpseManager] 💀 Труп ${corpseId} (${corpse.UnitTypeId}) сгнил и исчез`)
+    
+    -- Удаляем модель из мира
+    if corpse.Model and corpse.Model.Parent then
+        corpse.Model:Destroy()
+    end
+    
+    -- Удаляем из таблицы
+    Corpses[corpseId] = nil
+end
+
+-- ============================================
+-- Публичные функции (API)
+-- ============================================
+
+local CorpseManager = {}
+
+-- Создать труп в мире
+-- @param unitTypeId: string - тип юнита (из BaseStats.Units)
+-- @param position: Vector3 - место, где упал труп
+-- @param ownerId: number - UserId игрока, который убил (или 0 если ничей)
+-- @param customModel: Instance? - опционально, готовая модель трупа
+-- @return corpseId: number - ID созданного трупа
+function CorpseManager.CreateCorpse(
+    unitTypeId: string,
+    position: Vector3,
+    ownerId: number,
+    customModel: Instance?
+): number
+    local corpseId = nextCorpseId
+    nextCorpseId += 1
+    
+    local expireTime = os.time() + DECAY_TIME
+    
+    -- Создаем или используем готовую модель
+    local model = customModel
+    if not model then
+        -- TODO: Создать простую модель трупа (например, дымок + иконка)
+        -- Пока создаем заглушку — Part с названием
+        model = Instance.new("Part")
+        model.Name = `Corpse_{unitTypeId}`
+        model.Size = Vector3.new(3, 1, 3)
+        model.BrickColor = BrickColor.new("Dark gray")
+        model.Material = Enum.Material.Slate
+        model.Anchored = true
+        model.CanCollide = true
+        model.Transparency = 0.3
+        model.Position = position
+        model.Parent = workspace
+    end
+    
+    -- Сохраняем данные
+    Corpses[corpseId] = {
+        Model = model,
+        ExpireTime = expireTime,
+        UnitTypeId = unitTypeId,
+        Position = position,
+        OwnerId = ownerId,
+    }
+    
+    print(`[CorpseManager] 🩸 Создан труп ${corpseId} (${unitTypeId}) на ${position}. Исчезнет через ${DECAY_TIME} сек`)
+    
+    return corpseId
+end
+
+-- Получить данные трупа по ID
+function CorpseManager.GetCorpse(corpseId: number)
+    return Corpses[corpseId]
+end
+
+-- Получить труп по модели (если кликнули по ней)
+function CorpseManager.GetCorpseByModel(model: Instance): (number, any)
+    for id, corpse in pairs(Corpses) do
+        if corpse.Model == model then
+            return id, corpse
+        end
+    end
+    return nil, nil
+end
+
+-- Удалить труп принудительно (например, после воскрешения)
+function CorpseManager.RemoveCorpse(corpseId: number)
+    if Corpses[corpseId] then
+        print(`[CorpseManager] ⚰️ Труп ${corpseId} удален принудительно (воскрешен или убран)` )
+        DestroyCorpse(corpseId)
+        return true
+    end
+    return false
+end
+
+-- Получить все активные трупы на карте (опционально по владельцу)
+function CorpseManager.GetAllCorpses(ownerId: number?)
+    local result = {}
+    for id, corpse in pairs(Corpses) do
+        if ownerId == nil or corpse.OwnerId == ownerId then
+            result[id] = corpse
+        end
+    end
+    return result
+end
+
+-- Получить количество активных трупов
+function CorpseManager.GetCorpseCount(): number
+    local count = 0
+    for _ in pairs(Corpses) do
+        count += 1
+    end
+    return count
+end
+
+-- ============================================
+-- ЦИКЛ ОБНОВЛЕНИЯ (проверка просроченных трупов)
+-- ============================================
+
+-- Запускаем таймер, который каждую секунду проверяет истекшие трупы
+local heartbeatConnection = nil
+
+function CorpseManager.Start()
+    if heartbeatConnection then
+        return  -- Уже запущен
+    end
+    
+    print(`[CorpseManager] ⏰ Запущен менеджер трупов. Время жизни: ${DECAY_TIME} сек`)
+    
+    heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
+        local now = os.time()
+        local toRemove = {}
+        
+        -- Собираем истекшие трупы
+        for id, corpse in pairs(Corpses) do
+            if now >= corpse.ExpireTime then
+                table.insert(toRemove, id)
+            end
+        end
+        
+        -- Удаляем их
+        for _, id in ipairs(toRemove) do
+            DestroyCorpse(id)
+        end
+        
+        if #toRemove > 0 then
+            print(`[CorpseManager] 🧹 Удалено ${#toRemove} сгнивших трупов. Осталось: ${CorpseManager.GetCorpseCount()}`)
+        end
+    end)
+end
+
+-- Остановить менеджер (если нужно)
+function CorpseManager.Stop()
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+        print("[CorpseManager] ⏹️ Менеджер трупов остановлен")
+    end
+end
+
+-- Очистить все трупы (при выгрузке карты)
+function CorpseManager.ClearAll()
+    for id, _ in pairs(Corpses) do
+        DestroyCorpse(id)
+    end
+    print(`[CorpseManager] 🧹 Удалены все трупы`)
+end
+
+return CorpseManager</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="18">
+        <Properties>
+          <string name="Name">CraftingService</string>
+          <string name="Source">-- src/server-modules/CraftingService.lua
+-- Слияние могил / карточек (по Recipes.lua)
+-- Позволяет объединять 2-3 слабых юнита в одного сильного
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
+
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Recipes = require(ReplicatedStorage.Constants.Recipes)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+
+-- Сервисы (заполняются при Init)
+local ArmyService = nil
+
+-- ============================================
+-- RemoteEvent для получения запросов от клиента
+-- ============================================
+local RemoteEvents = Instance.new("Folder")
+RemoteEvents.Name = "CraftingRemoteEvents"
+RemoteEvents.Parent = ReplicatedStorage
+
+local RequestMerge = Instance.new("RemoteEvent")
+RequestMerge.Name = "RequestMerge"
+RequestMerge.Parent = RemoteEvents
+
+local RequestEnhance = Instance.new("RemoteEvent")
+RequestEnhance.Name = "RequestEnhance"
+RequestEnhance.Parent = RemoteEvents
+
+-- ============================================
+-- Вспомогательные функции
+-- ============================================
+
+-- Получить Tier юнита по его UnitTypeId
+local function GetUnitTier(unitTypeId: string): number
+    local unitData = BaseStats.Units[unitTypeId]
+    if not unitData then
+        return 1
+    end
+    return unitData.Tier or 1
+end
+
+-- Создать новую карточку из рецепта
+local function CreateCardFromRecipe(unitTypeId: string, isMerged: boolean): Types.Card
+    local cardId = `merged_card_{os.time()}_{math.random(1000, 9999)}`
+    
+    return {
+        CardId = cardId,
+        UnitTypeId = unitTypeId,
+        Modifiers = {},
+        IsMerged = isMerged,
+    }
+end
+
+-- Проверить, подходят ли карточки для рецепта (2x)
+local function CheckMerge2Recipe(cards: { Types.Card }): string?
+    if #cards ~= 2 then return nil end
+    
+    local tier1 = GetUnitTier(cards[1].UnitTypeId)
+    local tier2 = GetUnitTier(cards[2].UnitTypeId)
+    
+    -- Ищем подходящий рецепт
+    for _, recipe in ipairs(Recipes.Merge2) do
+        if recipe.InputTiers[1] == tier1 and recipe.InputTiers[2] == tier2 then
+            -- Выбираем случайного юнита из пула
+            local outputIndex = math.random(1, #recipe.OutputPool)
+            return recipe.OutputPool[outputIndex]
+        end
+    end
+    
+    return nil
+end
+
+-- Проверить, подходят ли карточки для рецепта (3x)
+local function CheckMerge3Recipe(cards: { Types.Card }): string?
+    if #cards ~= 3 then return nil end
+    
+    local tier1 = GetUnitTier(cards[1].UnitTypeId)
+    local tier2 = GetUnitTier(cards[2].UnitTypeId)
+    local tier3 = GetUnitTier(cards[3].UnitTypeId)
+    
+    -- Ищем подходящий рецепт
+    for _, recipe in ipairs(Recipes.Merge3) do
+        if recipe.InputTiers[1] == tier1 and 
+           recipe.InputTiers[2] == tier2 and 
+           recipe.InputTiers[3] == tier3 then
+            return recipe.OutputUnit
+        end
+    end
+    
+    return nil
+end
+
+-- Проверить специальный рецепт (по конкретным юнитам)
+local function CheckSpecialRecipe(cards: { Types.Card }): string?
+    if #cards &lt; 2 or #cards > 3 then return nil end
+    
+    -- Собираем список UnitTypeId карточек
+    local unitIds = {}
+    for _, card in ipairs(cards) do
+        table.insert(unitIds, card.UnitTypeId)
+    end
+    
+    -- Сортируем для сравнения (порядок не важен)
+    table.sort(unitIds)
+    
+    for _, recipe in ipairs(Recipes.SpecialRecipes) do
+        local recipeIds = {}
+        for _, id in ipairs(recipe.InputUnits) do
+            table.insert(recipeIds, id)
+        end
+        table.sort(recipeIds)
+        
+        -- Сравниваем
+        local match = true
+        if #unitIds ~= #recipeIds then
+            match = false
+        else
+            for i = 1, #unitIds do
+                if unitIds[i] ~= recipeIds[i] then
+                    match = false
+                    break
+                end
+            end
+        end
+        
+        if match then
+            print(`[CraftingService] 🎯 Найден специальный рецепт: ${recipe.Description} → ${recipe.OutputUnit}`)
+            return recipe.OutputUnit
+        end
+    end
+    
+    return nil
+end
+
+-- ============================================
+-- ОСНОВНЫЕ ФУНКЦИИ (API)
+-- ============================================
+
+local CraftingService = {}
+
+-- Слияние нескольких карточек в одну
+-- @param player: Player - игрок
+-- @param cardIds: { string } - список ID карточек для слияния
+-- @return boolean, string|Types.Card - успех, сообщение или новая карточка
+function CraftingService.MergeCards(player: Player, cardIds: { string })
+    -- Получаем данные игрока
+    local playerData = ArmyService.GetPlayerData(player)
+    if not playerData then
+        return false, "Ошибка загрузки данных игрока"
+    end
+    
+    -- Проверяем количество карточек (2 или 3)
+    if #cardIds &lt; 2 or #cardIds > 3 then
+        return false, "Для слияния нужно 2 или 3 карточки"
+    end
+    
+    -- Загружаем карточки из стека
+    local cards = {}
+    for _, cardId in ipairs(cardIds) do
+        local card = ArmyService.GetCardFromStack(player, cardId)
+        if not card then
+            return false, `Карточка ${cardId} не найдена в стеке`
+        end
+        table.insert(cards, card)
+    end
+    
+    -- Пытаемся найти рецепт
+    local outputUnitType = nil
+    
+    -- Сначала проверяем специальные рецепты
+    outputUnitType = CheckSpecialRecipe(cards)
+    
+    -- Если нет, проверяем рецепты 3x
+    if not outputUnitType and #cards == 3 then
+        outputUnitType = CheckMerge3Recipe(cards)
+    end
+    
+    -- Если нет, проверяем рецепты 2x
+    if not outputUnitType and #cards == 2 then
+        outputUnitType = CheckMerge2Recipe(cards)
+    end
+    
+    if not outputUnitType then
+        return false, "Нет подходящего рецепта для этих карточек"
+    end
+    
+    -- Проверяем стоимость маны
+    local mergeCost = BaseStats.Mana.ActionCost.Merge
+    if playerData.Mana.Current &lt; mergeCost then
+        return false, `Недостаточно маны (нужно ${mergeCost}, есть ${playerData.Mana.Current})`
+    end
+    
+    -- Тратим ману
+    local success = ArmyService.SpendMana(player, mergeCost, Enums.CubeAction.Merge)
+    if not success then
+        return false, "Не удалось списать ману"
+    end
+    
+    -- Удаляем исходные карточки
+    for _, cardId in ipairs(cardIds) do
+        ArmyService.RemoveCardFromStack(player, cardId)
+    end
+    
+    -- Создаем новую карточку
+    local newCard = CreateCardFromRecipe(outputUnitType, true)
+    
+    -- Добавляем в стек
+    ArmyService.AddCardToStack(player, newCard)
+    
+    -- Обновляем статистику
+    playerData.TotalMerges = (playerData.TotalMerges or 0) + 1
+    
+    print(`[CraftingService] 🔮 ${player.Name} слил ${#cards} карточек → ${outputUnitType} (${newCard.CardId})`)
+    
+    return true, newCard
+end
+
+-- Усилить карточку (добавить мод)
+-- @param player: Player - игрок
+-- @param cardId: string - ID карточки
+-- @param buffType: string - тип баффа (из Enums.BuffType)
+-- @return boolean, string - успех, сообщение
+function CraftingService.EnhanceCard(player: Player, cardId: string, buffType: string)
+    -- Получаем данные игрока
+    local playerData = ArmyService.GetPlayerData(player)
+    if not playerData then
+        return false, "Ошибка загрузки данных игрока"
+    end
+    
+    -- Получаем карточку
+    local card = ArmyService.GetCardFromStack(player, cardId)
+    if not card then
+        return false, "Карточка не найдена в стеке"
+    end
+    
+    -- Получаем данные баффа
+    local buffData = require(ReplicatedStorage.Constants.Buffs)[buffType]
+    if not buffData then
+        return false, "Неизвестный тип усиления"
+    end
+    
+    -- Проверяем, есть ли уже такой бафф
+    if card.Modifiers and card.Modifiers[buffType] then
+        return false, "У карточки уже есть это усиление"
+    end
+    
+    -- Проверяем стоимость маны
+    local enhanceCost = buffData.Cost or BaseStats.Mana.ActionCost.Enhance
+    if playerData.Mana.Current &lt; enhanceCost then
+        return false, `Недостаточно маны (нужно ${enhanceCost}, есть ${playerData.Mana.Current})`
+    end
+    
+    -- Тратим ману
+    local success = ArmyService.SpendMana(player, enhanceCost, Enums.CubeAction.Enhance)
+    if not success then
+        return false, "Не удалось списать ману"
+    end
+    
+    -- Добавляем бафф к карточке
+    card.Modifiers = card.Modifiers or {}
+    card.Modifiers[buffType] = {
+        Value = buffData.Value,
+        Duration = buffData.Duration or -1,
+    }
+    
+    print(`[CraftingService] ⚡ ${player.Name} усилил карточку ${card.UnitTypeId} баффом ${buffType}`)
+    
+    return true, "Усиление добавлено"
+}
+
+-- Получить список доступных рецептов (для UI)
+function CraftingService.GetAvailableRecipes(player: Player): table
+    local playerData = ArmyService.GetPlayerData(player)
+    if not playerData then return {} end
+    
+    local recipes = {
+        merge2 = {},
+        merge3 = {},
+        special = {},
+    }
+    
+    -- Копируем рецепты из конфига
+    for _, recipe in ipairs(Recipes.Merge2 or {}) do
+        table.insert(recipes.merge2, recipe)
+    end
+    
+    for _, recipe in ipairs(Recipes.Merge3 or {}) do
+        table.insert(recipes.merge3, recipe)
+    end
+    
+    for _, recipe in ipairs(Recipes.SpecialRecipes or {}) do
+        table.insert(recipes.special, recipe)
+    end
+    
+    return recipes
+end
+
+-- ============================================
+-- ОБРАБОТЧИКИ REMOTES
+-- ============================================
+
+local function SetupRemotes()
+    -- Клиент просит слить карточки
+    RequestMerge.OnServerEvent:Connect(function(player: Player, cardIds: { string })
+        if type(cardIds) ~= "table" or #cardIds &lt; 2 then
+            print(`[CraftingService] ⚠️ ${player.Name} отправил некорректный запрос на слияние`)
+            return
+        end
+        
+        local success, result = CraftingService.MergeCards(player, cardIds)
+        
+        if success then
+            print(`[CraftingService] ✅ ${player.Name} успешно слил карточки`)
+            -- TODO: Отправить подтверждение клиенту с новой карточкой
+        else
+            print(`[CraftingService] ❌ ${player.Name} не смог слить карточки: ${result}`)
+            -- TODO: Отправить ошибку клиенту
+        end
+    end)
+    
+    -- Клиент просит усилить карточку
+    RequestEnhance.OnServerEvent:Connect(function(player: Player, cardId: string, buffType: string)
+        if type(cardId) ~= "string" or type(buffType) ~= "string" then
+            print(`[CraftingService] ⚠️ ${player.Name} отправил некорректный запрос на усиление`)
+            return
+        end
+        
+        local success, result = CraftingService.EnhanceCard(player, cardId, buffType)
+        
+        if success then
+            print(`[CraftingService] ✅ ${player.Name} успешно усилил карточку ${cardId}`)
+            -- TODO: Отправить подтверждение клиенту
+        else
+            print(`[CraftingService] ❌ ${player.Name} не смог усилить карточку: ${result}`)
+            -- TODO: Отправить ошибку клиенту
+        end
+    end)
+    
+    print("[CraftingService] 📡 RemoteEvents настроены")
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function CraftingService.Init(armyService)
+    ArmyService = armyService
+    
+    if not ArmyService then
+        error("[CraftingService] ❌ Не удалось инициализировать: ArmyService отсутствует")
+    end
+    
+    SetupRemotes()
+    
+    print("[CraftingService] ========== ИНИЦИАЛИЗАЦИЯ ==========")
+    print("   - Зависимости: ArmyService ✅")
+    print("   - Рецептов 2x:", #(Recipes.Merge2 or {}))
+    print("   - Рецептов 3x:", #(Recipes.Merge3 or {}))
+    print("   - Специальных рецептов:", #(Recipes.SpecialRecipes or {}))
+    print("   - Стоимость слияния:", BaseStats.Mana.ActionCost.Merge, "маны")
+    print("[CraftingService] ✅ Готов к работе")
+end
+
+return CraftingService</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="19">
+        <Properties>
+          <string name="Name">RitualService</string>
+          <string name="Source">-- src/server-modules/RitualService.lua
+-- Воскрешение: труп → карточка в стек (через ArmyService)
+-- Требует маны, проверяет доступность трупа
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
+
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+
+-- Сервисы (заполняются при Init)
+local ArmyService = nil
+local CorpseManager = nil
+
+-- ============================================
+-- RemoteEvent для получения запросов от клиента
+-- ============================================
+local RemoteEvents = Instance.new("Folder")
+RemoteEvents.Name = "RitualRemoteEvents"
+RemoteEvents.Parent = ReplicatedStorage
+
+local RequestResurrect = Instance.new("RemoteEvent")
+RequestResurrect.Name = "RequestResurrect"
+RequestResurrect.Parent = RemoteEvents
+
+-- ============================================
+-- Вспомогательные функции
+-- ============================================
+
+-- Получить стоимость воскрешения для юнита (из BaseStats)
+local function GetResurrectCost(unitTypeId: string): number
+    -- Базовая стоимость + возможно модификатор от силы юнита
+    local unitData = BaseStats.Units[unitTypeId]
+    if not unitData then
+        return BaseStats.Mana.ActionCost.Resurrect  -- по умолчанию 10
+    end
+    
+    -- Чем сильнее юнит, тем дороже воскресить (опционально)
+    local tierBonus = (unitData.Tier - 1) * 2
+    return BaseStats.Mana.ActionCost.Resurrect + tierBonus
+end
+
+-- Проверить, можно ли воскресить этот труп
+local function CanResurrect(player: Player, corpseId: number): (boolean, string)
+    local corpse = CorpseManager.GetCorpse(corpseId)
+    if not corpse then
+        return false, "Труп уже сгнил или не существует"
+    end
+    
+    -- Проверка владельца (опционально: только убивший может воскресить?)
+    -- Если ownerId == 0, труп ничей (можно любому)
+    if corpse.OwnerId ~= 0 and corpse.OwnerId ~= player.UserId then
+        return false, "Этот труп принадлежит другому игроку"
+    end
+    
+    local cost = GetResurrectCost(corpse.UnitTypeId)
+    local playerData = ArmyService.GetPlayerData(player)
+    
+    if not playerData then
+        return false, "Ошибка загрузки данных игрока"
+    end
+    
+    if playerData.Mana.Current &lt; cost then
+        return false, string.format("Недостаточно маны (нужно %d, есть %d)", cost, playerData.Mana.Current)
+    end
+    
+    return true, ""
+end
+
+-- ============================================
+-- ОСНОВНЫЕ ФУНКЦИИ (API)
+-- ============================================
+
+local RitualService = {}
+
+-- Воскресить труп (создать карточку в стеке)
+-- @return boolean, string|Card - успех, сообщение или созданная карточка
+function RitualService.ResurrectCorpse(player: Player, corpseId: number)
+    -- Проверка возможности
+    local canResurrect, reason = CanResurrect(player, corpseId)
+    if not canResurrect then
+        print(`[RitualService] ❌ ${player.Name} не может воскресить: ${reason}`)
+        return false, reason
+    end
+    
+    local corpse = CorpseManager.GetCorpse(corpseId)
+    if not corpse then
+        return false, "Труп не найден"
+    end
+    
+    local unitTypeId = corpse.UnitTypeId
+    local cost = GetResurrectCost(unitTypeId)
+    
+    -- Тратим ману
+    local success = ArmyService.SpendMana(player, cost, Enums.CubeAction.Resurrect)
+    if not success then
+        return false, "Не удалось списать ману"
+    end
+    
+    -- Создаем карточку
+    local cardId = `card_{player.UserId}_{os.time()}_{corpseId}`
+    local unitData = BaseStats.Units[unitTypeId]
+    
+    local newCard = {
+        CardId = cardId,
+        UnitTypeId = unitTypeId,
+        Modifiers = {},  -- Пока без улучшений
+        IsMerged = false,
+    }
+    
+    -- Добавляем в стек игрока
+    ArmyService.AddCardToStack(player, newCard)
+    
+    -- Удаляем труп из мира
+    CorpseManager.RemoveCorpse(corpseId)
+    
+    print(`[RitualService] ✨ ${player.Name} воскресил ${unitTypeId} (ID: ${corpseId}) → карточка ${cardId}`)
+    
+    -- TODO: Отправить клиенту обновление стека карточек
+    
+    return true, newCard
+end
+
+-- Получить список воскрешаемых трупов для игрока (для UI)
+function RitualService.GetResurrectableCorpses(player: Player): { [number]: any }
+    local result = {}
+    local allCorpses = CorpseManager.GetAllCorpses()
+    
+    for id, corpse in pairs(allCorpses) do
+        -- Ничей труп или принадлежит игроку
+        if corpse.OwnerId == 0 or corpse.OwnerId == player.UserId then
+            local cost = GetResurrectCost(corpse.UnitTypeId)
+            result[id] = {
+                CorpseId = id,
+                UnitTypeId = corpse.UnitTypeId,
+                Cost = cost,
+                Position = corpse.Position,
+                OwnerId = corpse.OwnerId,
+            }
+        end
+    end
+    
+    return result
+end
+
+-- ============================================
+-- ОБРАБОТЧИКИ REMOTES
+-- ============================================
+
+local function SetupRemotes()
+    -- Клиент просит воскресить труп
+    RequestResurrect.OnServerEvent:Connect(function(player: Player, corpseId: number)
+        if type(corpseId) ~= "number" then
+            print(`[RitualService] ⚠️ ${player.Name} отправил некорректный corpseId: ${corpseId}`)
+            return
+        end
+        
+        local success, result = RitualService.ResurrectCorpse(player, corpseId)
+        
+        if success then
+            -- Отправляем подтверждение клиенту
+            -- TODO: RemoteEvent для подтверждения успеха
+            print(`[RitualService] ✅ ${player.Name} успешно воскресил труп ${corpseId}`)
+        else
+            -- Отправляем ошибку клиенту
+            -- TODO: RemoteEvent для отправки ошибки
+            print(`[RitualService] ❌ ${player.Name} не смог воскресить: ${result}`)
+        end
+    end)
+    
+    print("[RitualService] 📡 RemoteEvents настроены")
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function RitualService.Init(armyService, corpseManager)
+    ArmyService = armyService
+    CorpseManager = corpseManager
+    
+    if not ArmyService or not CorpseManager then
+        error("[RitualService] ❌ Не удалось инициализировать: зависимые сервисы отсутствуют")
+    end
+    
+    SetupRemotes()
+    
+    print("[RitualService] ========== ИНИЦИАЛИЗАЦИЯ ==========")
+    print("   - Зависимости: ArmyService ✅, CorpseManager ✅")
+    print("   - Стоимость воскрешения: базово", BaseStats.Mana.ActionCost.Resurrect, "маны")
+    print("   - Количество типов юнитов для воскрешения:", table.count(BaseStats.Units))
+    print("[RitualService] ✅ Готов к работе")
+end
+
+return RitualService</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="20">
+        <Properties>
+          <string name="Name">StorageService</string>
+          <string name="Source"></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="21">
+        <Properties>
+          <string name="Name">TestEnemySpawner</string>
+          <string name="Source">-- src/server-modules/TestEnemySpawner.lua
+-- Спавн тестовых врагов для проверки механик
+-- ВЕРСИЯ 1.0
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+
+-- Сервисы (заполняются при Init)
+local ArmyService = nil
+local CorpseManager = nil
+
+-- ============================================
+-- Хранилище активных врагов
+-- ============================================
+local ActiveEnemies = {}  -- [enemyId] = {Model, Humanoid, UnitType, Position}
+
+-- ============================================
+-- Создание модели врага
+-- ============================================
+
+local function CreateEnemyModel(enemyType: string, position: Vector3): Model
+    local model = Instance.new("Model")
+    model.Name = enemyType
+    
+    -- Humanoid
+    local humanoid = Instance.new("Humanoid")
+    humanoid.MaxHealth = 50
+    humanoid.Health = 50
+    humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+    humanoid.Parent = model
+    
+    -- PrimaryPart (простая парт для физики)
+    local primaryPart = Instance.new("Part")
+    primaryPart.Name = "HumanoidRootPart"
+    primaryPart.Size = Vector3.new(3, 3, 3)
+    primaryPart.Shape = Enum.PartType.Block
+    primaryPart.BrickColor = BrickColor.new("Bright red")
+    primaryPart.Material = Enum.Material.SmoothPlastic
+    primaryPart.Anchored = false
+    primaryPart.CanCollide = true
+    primaryPart.Position = position
+    primaryPart.Parent = model
+    
+    model.PrimaryPart = primaryPart
+    
+    -- Голова (для красоты)
+    local head = Instance.new("Part")
+    head.Name = "Head"
+    head.Size = Vector3.new(2, 2, 2)
+    head.BrickColor = BrickColor.new("Really red")
+    head.Material = Enum.Material.SmoothPlastic
+    head.Position = position + Vector3.new(0, 2, 0)
+    head.Parent = model
+    
+    -- Туловище
+    local torso = Instance.new("Part")
+    torso.Name = "Torso"
+    torso.Size = Vector3.new(2.5, 2, 2)
+    torso.BrickColor = BrickColor.new("Dark red")
+    torso.Material = Enum.Material.SmoothPlastic
+    torso.Position = position + Vector3.new(0, 0, 0)
+    torso.Parent = model
+    
+    model.Parent = Workspace
+    
+    print(`[TestEnemySpawner] 🧟 Создан враг ${enemyType} на позиции ${position}`)
+    
+    return model
+end
+
+-- ============================================
+-- Обработка смерти врага
+-- ============================================
+
+local function OnEnemyDeath(enemyId: string, enemyModel: Model, enemyType: string, position: Vector3)
+    print(`[TestEnemySpawner] 💀 Враг ${enemyId} (${enemyType}) убит!`)
+    
+    -- Удаляем из активных
+    ActiveEnemies[enemyId] = nil
+    
+    -- Создаем труп через CorpseManager
+    if CorpseManager then
+        local killerId = 0  -- TODO: определить кто убил
+        CorpseManager.CreateCorpse(enemyType, position, killerId)
+    end
+    
+    -- Начисляем ману и опыт игроку (TODO: определить кто убил)
+    -- Пока просто спавним нового врага через 5 секунд
+    task.delay(5, function()
+        TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(
+            math.random(-50, 50),
+            5,
+            math.random(-50, 50)
+        ))
+    end)
+end
+
+-- ============================================
+-- AI врага (простой: бежит к игроку)
+-- ============================================
+
+local function EnemyAI(enemyId: string, deltaTime: number)
+    local enemy = ActiveEnemies[enemyId]
+    if not enemy or not enemy.Model or not enemy.Model.PrimaryPart then
+        return
+    end
+    
+    -- Ищем ближайшего игрока
+    local players = game:GetService("Players"):GetPlayers()
+    local nearestPlayer = nil
+    local nearestDistance = 50  -- Радиус поиска
+    
+    for _, player in ipairs(players) do
+        local character = player.Character
+        if character and character.PrimaryPart then
+            local distance = (enemy.Model.PrimaryPart.Position - character.PrimaryPart.Position).Magnitude
+            if distance &lt; nearestDistance then
+                nearestDistance = distance
+                nearestPlayer = player
+            end
+        end
+    end
+    
+    if nearestPlayer and nearestPlayer.Character and nearestPlayer.Character.PrimaryPart then
+        -- Движение к игроку
+        local targetPos = nearestPlayer.Character.PrimaryPart.Position
+        local direction = (targetPos - enemy.Model.PrimaryPart.Position).Unit
+        local speed = 20  -- Скорость передвижения
+        
+        enemy.Model.PrimaryPart.Position = enemy.Model.PrimaryPart.Position + direction * speed * deltaTime
+        
+        -- Атака, если близко
+        if nearestDistance &lt; 5 then
+            local humanoid = nearestPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+            if humanoid then
+                humanoid.Health -= 10
+                print(`[TestEnemySpawner] ⚔️ Враг ${enemyId} атаковал ${nearestPlayer.Name}!`)
+            end
+        end
+    end
+end
+
+-- ============================================
+-- ПУБЛИЧНЫЕ ФУНКЦИИ
+-- ============================================
+
+local TestEnemySpawner = {}
+
+function TestEnemySpawner.SpawnEnemy(enemyType: string, position: Vector3): string?
+    local enemyId = `enemy_{os.time()}_{math.random(1000, 9999)}`
+    
+    local model = CreateEnemyModel(enemyType, position)
+    local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+    
+    if not humanoid then
+        model:Destroy()
+        return nil
+    end
+    
+    -- Подписываемся на смерть
+    humanoid.Died:Connect(function()
+        OnEnemyDeath(enemyId, model, enemyType, position)
+    end)
+    
+    ActiveEnemies[enemyId] = {
+        Model = model,
+        Humanoid = humanoid,
+        UnitType = enemyType,
+        Position = position,
+    }
+    
+    print(`[TestEnemySpawner] 🎮 Спавн врага ${enemyId} (${enemyType})`)
+    
+    return enemyId
+end
+
+function TestEnemySpawner.SpawnTestEnemies()
+    print("[TestEnemySpawner] 🎮 Спавн тестовых врагов...")
+    
+    -- Спавним 3 врагов вокруг центра карты
+    TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(20, 5, 20))
+    TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(-20, 5, -20))
+    TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(20, 5, -20))
+    
+    print("[TestEnemySpawner] ✅ 3 тестовых врага созданы")
+end
+
+function TestEnemySpawner.ClearAllEnemies()
+    for enemyId, enemy in pairs(ActiveEnemies) do
+        if enemy.Model then
+            enemy.Model:Destroy()
+        end
+    end
+    ActiveEnemies = {}
+    print("[TestEnemySpawner] 🧹 Все враги удалены")
+end
+
+-- ============================================
+-- Цикл AI
+-- ============================================
+
+local aiConnection = nil
+
+function TestEnemySpawner.StartAI()
+    if aiConnection then
+        return
+    end
+    
+    print("[TestEnemySpawner] 🤖 Запуск AI для врагов")
+    
+    aiConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        for enemyId, _ in pairs(ActiveEnemies) do
+            EnemyAI(enemyId, deltaTime)
+        end
+    end)
+end
+
+function TestEnemySpawner.StopAI()
+    if aiConnection then
+        aiConnection:Disconnect()
+        aiConnection = nil
+        print("[TestEnemySpawner] ⏹️ AI врагов остановлен")
+    end
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function TestEnemySpawner.Init(armyService, corpseManager)
+    ArmyService = armyService
+    CorpseManager = corpseManager
+    
+    if not ArmyService then
+        error("[TestEnemySpawner] ❌ Не удалось инициализировать: ArmyService отсутствует")
+    end
+    
+    TestEnemySpawner.StartAI()
+    
+    -- Автоматический спавн врагов
+    task.wait(3)  -- Ждем загрузки карты
+    TestEnemySpawner.SpawnTestEnemies()
+    
+    print("[TestEnemySpawner] ========== ИНИЦИАЛИЗАЦИЯ ==========")
+    print("   - Зависимости: ArmyService ✅")
+    print("   - AI статус: активен")
+    print("   - Тестовые враги: созданы")
+    print("[TestEnemySpawner] ✅ Готов к работе")
+end
+
+return TestEnemySpawner</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="22">
+        <Properties>
+          <string name="Name">UnitFactory</string>
+          <string name="Source">-- src/server-modules/UnitFactory.lua
+-- Создание и управление юнитами в мире (модели, AI, бой)
+-- Получает команды от ArmyService (когда юнит оживлен)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
+local RunService = game:GetService("RunService")
+
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Enums = require(ReplicatedStorage.Shared.Enums)
+
+-- ============================================
+-- Хранилище активных юнитов в мире
+-- ============================================
+-- ActiveUnits[unitId] = {
+--     Model = Instance,
+--     Humanoid = Instance,
+--     UnitData = Types.ActiveUnit,
+--     CurrentTarget = Instance?,  -- Кого атакует
+--     Owner = Player,
+-- }
+
+local ActiveUnits = {}  -- [unitId] = unitInstance
+
+-- Ссылка на ArmyService (заполняется при Init)
+local ArmyService = nil
+
+-- ============================================
+-- Создание модели юнита
+-- ============================================
+
+local function CreateUnitModel(unitTypeId: string, position: Vector3): Model
+    local unitData = BaseStats.Units[unitTypeId]
+    if not unitData then
+        error(`[UnitFactory] Неизвестный тип юнита: ${unitTypeId}`)
+    end
+    
+    -- Создаем модель
+    local model = Instance.new("Model")
+    model.Name = unitData.Name
+    
+    -- Создаем Humanoid (для AI и здоровья)
+    local humanoid = Instance.new("Humanoid")
+    humanoid.MaxHealth = unitData.BaseHealth
+    humanoid.Health = unitData.BaseHealth
+    humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+    humanoid.Parent = model
+    
+    -- Создаем PrimaryPart (простая парт для физики и позиции)
+    local primaryPart = Instance.new("Part")
+    primaryPart.Name = "PrimaryPart"
+    primaryPart.Size = Vector3.new(2, 2, 2)
+    primaryPart.Shape = Enum.PartType.Block
+    primaryPart.BrickColor = BrickColor.new("Dark gray")
+    primaryPart.Material = Enum.Material.Slate
+    primaryPart.Anchored = false
+    primaryPart.CanCollide = true
+    primaryPart.Position = position
+    primaryPart.Parent = model
+    
+    model.PrimaryPart = primaryPart
+    
+    -- TODO: Загрузить реальную модель из AssetId (unitData.ModelId)
+    -- Если есть модель, заменить этой заглушкой
+    
+    model.Parent = workspace
+    
+    print(`[UnitFactory] 🏗️ Создана модель юнита ${unitData.Name} на позиции ${position}`)
+    
+    return model
+end
+
+-- ============================================
+-- Поиск ближайшего врага
+-- ============================================
+
+local function FindNearestEnemy(unitModel: Model, position: Vector3, attackRange: number, owner: Player)
+    -- Ищем врагов поблизости
+    local nearestDistance = attackRange
+    local nearestEnemy = nil
+    
+    -- TODO: Более умный поиск (по тегам, командам, агрессии)
+    -- Пока ищем любых NPC не принадлежащих игроку
+    
+    for _, npc in ipairs(workspace:GetDescendants()) do
+        if npc:IsA("Model") and npc ~= unitModel then
+            -- Проверка, что это враг (упрощенно: не является юнитом игрока)
+            local isOwnUnit = false
+            for _, activeUnit in pairs(ActiveUnits) do
+                if activeUnit.Model == npc and activeUnit.Owner == owner then
+                    isOwnUnit = true
+                    break
+                end
+            end
+            
+            if not isOwnUnit and npc.PrimaryPart then
+                local distance = (position - npc.PrimaryPart.Position).Magnitude
+                if distance &lt; nearestDistance then
+                    nearestDistance = distance
+                    nearestEnemy = npc
+                end
+            end
+        end
+    end
+    
+    return nearestEnemy
+end
+
+-- ============================================
+-- Атака (обработка урона)
+-- ============================================
+
+local function DealDamage(attacker: Model, target: Model, damage: number, attackerUnitId: string, owner: Player)
+    local targetHumanoid = target:FindFirstChildWhichIsA("Humanoid")
+    if not targetHumanoid then return end
+    
+    targetHumanoid.Health -= damage
+    
+    print(`[UnitFactory] ⚔️ Юнит ${attacker.Name} нанес ${damage} урона ${target.Name}. Осталось здоровья: ${targetHumanoid.Health}`)
+    
+    -- Если цель умерла
+    if targetHumanoid.Health &lt;= 0 then
+        -- Проверяем, является ли цель юнитом игрока
+        local killedByPlayer = owner
+        local enemyType = "Normal"  -- TODO: Определять тип врага (Elite, Boss)
+        
+        -- Уведомляем ArmyService для начисления маны и опыта
+        if ArmyService then
+            ArmyService.RegisterKill(killedByPlayer, "Unit", enemyType)
+        end
+        
+        -- TODO: Создать труп через CorpseManager
+        -- CorpseManager.CreateCorpse(unitTypeId, target.PrimaryPart.Position, owner.UserId)
+        
+        -- Удаляем убитого
+        target:Destroy()
+    end
+end
+
+-- ============================================
+-- Цикл AI для одного юнита
+-- ============================================
+
+local function UnitAI(unitId: string)
+    local unit = ActiveUnits[unitId]
+    if not unit then return end
+    
+    local model = unit.Model
+    local unitData = unit.UnitData
+    local owner = unit.Owner
+    
+    if not model or not model.PrimaryPart then return end
+    
+    local currentPosition = model.PrimaryPart.Position
+    local stats = BaseStats.Units[unitData.UnitTypeId]
+    
+    -- Поиск врага
+    local target = FindNearestEnemy(model, currentPosition, stats.AttackRange, owner)
+    
+    if target and target.PrimaryPart then
+        -- Атакуем
+        unit.CurrentTarget = target
+        
+        -- Движение к цели если далеко
+        local distanceToTarget = (currentPosition - target.PrimaryPart.Position).Magnitude
+        if distanceToTarget > stats.AttackRange then
+            -- Двигаемся к цели
+            local direction = (target.PrimaryPart.Position - currentPosition).Unit
+            model.PrimaryPart.Position += direction * 16  -- Скорость 16 студий/сек
+        else
+            -- В радиусе атаки
+            local damage = stats.BaseDamage
+            
+            -- Применяем баффы (лед, яд и т.д.)
+            for buffName, buffData in pairs(unitData.Buffs or {}) do
+                if buffName == Enums.BuffType.IceTouch then
+                    damage = damage + (buffData.Value or 10)
+                    -- TODO: Замедление цели
+                elseif buffName == Enums.BuffType.PoisonAura then
+                    -- TODO: Облако яда
+                end
+            end
+            
+            DealDamage(model, target, damage, unitId, owner)
+        end
+    else
+        -- Нет цели — стоим на месте
+        unit.CurrentTarget = nil
+    end
+end
+
+-- ============================================
+-- ОСНОВНЫЕ ФУНКЦИИ (API)
+-- ============================================
+
+local UnitFactory = {}
+
+-- Создать активного юнита в мире
+-- @param unitData: Types.ActiveUnit - данные юнита из слота
+-- @param owner: Player - владелец
+-- @param spawnPosition: Vector3 - место появления
+function UnitFactory.SpawnUnit(unitData: Types.ActiveUnit, owner: Player, spawnPosition: Vector3): boolean
+    local stats = BaseStats.Units[unitData.UnitTypeId]
+    if not stats then
+        print(`[UnitFactory] ❌ Неизвестный тип юнита: ${unitData.UnitTypeId}`)
+        return false
+    end
+    
+    -- Создаем модель
+    local model = CreateUnitModel(unitData.UnitTypeId, spawnPosition)
+    
+    -- Сохраняем в активные
+    ActiveUnits[unitData.InstanceId] = {
+        Model = model,
+        UnitData = unitData,
+        Owner = owner,
+        CurrentTarget = nil,
+    }
+    
+    print(`[UnitFactory] ✨ Спавн юнита ${stats.Name} (${unitData.InstanceId}) для игрока ${owner.Name}`)
+    
+    return true
+end
+
+-- Удалить юнита из мира (при смерти или рассеивании)
+function UnitFactory.DespawnUnit(unitId: string)
+    local unit = ActiveUnits[unitId]
+    if not unit then return end
+    
+    if unit.Model then
+        unit.Model:Destroy()
+    end
+    
+    ActiveUnits[unitId] = nil
+    
+    print(`[UnitFactory] 💀 Юнит ${unitId} удален из мира`)
+end
+
+-- Рассеять ВСЕХ юнитов игрока (при выходе из куба)
+function UnitFactory.DespawnAllUnitsForPlayer(player: Player)
+    local toRemove = {}
+    
+    for unitId, unit in pairs(ActiveUnits) do
+        if unit.Owner == player then
+            table.insert(toRemove, unitId)
+        end
+    end
+    
+    for _, unitId in ipairs(toRemove) do
+        UnitFactory.DespawnUnit(unitId)
+    end
+    
+    print(`[UnitFactory] 🧹 Рассеяно ${#toRemove} юнитов игрока ${player.Name}`)
+end
+
+-- Получить всех активных юнитов игрока
+function UnitFactory.GetPlayerUnits(player: Player): { [string]: any }
+    local result = {}
+    for unitId, unit in pairs(ActiveUnits) do
+        if unit.Owner == player then
+            result[unitId] = unit
+        end
+    end
+    return result
+end
+
+-- ============================================
+-- ЦИКЛ ИГРОВОГО ПРОЦЕССА (AI)
+-- ============================================
+
+local aiConnection = nil
+
+function UnitFactory.StartAI()
+    if aiConnection then
+        return
+    end
+    
+    print("[UnitFactory] 🤖 Запуск системы AI для юнитов")
+    
+    aiConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        -- Обновляем AI для каждого юнита
+        for unitId, _ in pairs(ActiveUnits) do
+            UnitAI(unitId)
+        end
+    end)
+end
+
+function UnitFactory.StopAI()
+    if aiConnection then
+        aiConnection:Disconnect()
+        aiConnection = nil
+        print("[UnitFactory] ⏹️ Система AI остановлена")
+    end
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function UnitFactory.Init(armyService)
+    ArmyService = armyService
+    
+    if not ArmyService then
+        error("[UnitFactory] ❌ Не удалось инициализировать: ArmyService отсутствует")
+    end
+    
+    UnitFactory.StartAI()
+    
+    print("[UnitFactory] ========== ИНИЦИАЛИЗАЦИЯ ==========")
+    print("   - Зависимости: ArmyService ✅")
+    print("   - AI статус: активен")
+    print("   - Модели юнитов: заглушки (ждут реальных моделей)")
+    print("[UnitFactory] ✅ Готов к работе")
+end
+
+return UnitFactory</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="23">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="Folder" referent="24">
+      <Properties>
+        <string name="Name">StarterGui</string>
+      </Properties>
+      <Item class="ModuleScript" referent="25">
+        <Properties>
+          <string name="Name">AggroBar</string>
+          <string name="Source">-- src/ui/AggroBar.lua
+-- Шкала гнева деревни
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local AggroBar = {}
+
+local barFrame = nil
+local fillFrame = nil
+local textLabel = nil
+
+-- ============================================
+-- СОЗДАНИЕ
+-- ============================================
+
+local function CreateAggroBar()
+    local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
+    if not screenGui then return nil end
+    
+    barFrame = Instance.new("Frame")
+    barFrame.Name = "AggroBar"
+    barFrame.Size = UDim2.new(0, 200, 0, 20)
+    barFrame.Position = UDim2.new(0.5, -100, 0, 50)
+    barFrame.BackgroundColor3 = Color3.fromRGB(30, 20, 20)
+    barFrame.BorderSizePixel = 0
+    barFrame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = barFrame
+    
+    fillFrame = Instance.new("Frame")
+    fillFrame.Name = "Fill"
+    fillFrame.Size = UDim2.new(0, 0, 1, 0)
+    fillFrame.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    fillFrame.BorderSizePixel = 0
+    fillFrame.Parent = barFrame
+    
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 4)
+    fillCorner.Parent = fillFrame
+    
+    textLabel = Instance.new("TextLabel")
+    textLabel.Name = "Text"
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "😠 0%"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.Parent = barFrame
+    
+    return barFrame
+end
+
+-- ============================================
+-- ПУБЛИЧНЫЕ ФУНКЦИИ
+-- ============================================
+
+function AggroBar.Update(aggroLevel: number, maxAggro: number)
+    if not barFrame then
+        CreateAggroBar()
+    end
+    
+    if not fillFrame then return end
+    
+    local percent = math.clamp(aggroLevel / maxAggro, 0, 1)
+    fillFrame.Size = UDim2.new(percent, 0, 1, 0)
+    
+    -- Меняем цвет в зависимости от уровня
+    if percent &lt; 0.3 then
+        fillFrame.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        textLabel.Text = `😊 ${math.floor(percent * 100)}%`
+    elseif percent &lt; 0.7 then
+        fillFrame.BackgroundColor3 = Color3.fromRGB(200, 150, 0)
+        textLabel.Text = `😠 ${math.floor(percent * 100)}%`
+    else
+        fillFrame.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+        textLabel.Text = `👿 ${math.floor(percent * 100)}%`
+    end
+end
+
+function AggroBar.SetVisible(visible: boolean)
+    if barFrame then
+        barFrame.Visible = visible
+    end
+end
+
+function AggroBar.Init()
+    print("[AggroBar] 📊 Инициализация шкалы агрессии")
+    CreateAggroBar()
+    AggroBar.Update(0, 100)
+    print("[AggroBar] ✅ Готов")
+end
+
+return AggroBar</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="26">
+        <Properties>
+          <string name="Name">CraftingMenu</string>
+          <string name="Source">-- src/ui/CraftingMenu.lua
+-- Окно слияния карточек (мержа)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local NetworkBridge = require(script.Parent.Parent.client.NetworkBridge)
+local SoulStackUI = require(script.Parent.SoulStackUI)
+
+local CraftingMenu = {}
+
+local menuFrame = nil
+local isOpen = false
+
+-- ============================================
+-- СОЗДАНИЕ ОКНА
+-- ============================================
+
+local function CreateMenu()
+    local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
+    if not screenGui then return nil end
+    
+    menuFrame = Instance.new("Frame")
+    menuFrame.Name = "CraftingMenu"
+    menuFrame.Size = UDim2.new(0, 350, 0, 250)
+    menuFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
+    menuFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    menuFrame.BorderSizePixel = 1
+    menuFrame.BorderColor3 = Color3.fromRGB(100, 100, 150)
+    menuFrame.Visible = false
+    menuFrame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = menuFrame
+    
+    -- Заголовок
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    title.Text = "🔮 Слияние карточек"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold
+    title.TextScaled = true
+    title.Parent = menuFrame
+    
+    -- Инструкция
+    local instruction = Instance.new("TextLabel")
+    instruction.Size = UDim2.new(1, -20, 0, 30)
+    instruction.Position = UDim2.new(0, 10, 0, 45)
+    instruction.BackgroundTransparency = 1
+    instruction.Text = "Выберите 2 или 3 карточки в стеке душ"
+    instruction.TextColor3 = Color3.fromRGB(180, 180, 180)
+    instruction.TextSize = 14
+    instruction.Font = Enum.Font.Gotham
+    instruction.Parent = menuFrame
+    
+    -- Кнопка слияния
+    local mergeButton = Instance.new("TextButton")
+    mergeButton.Name = "MergeButton"
+    mergeButton.Size = UDim2.new(0.4, 0, 0, 40)
+    mergeButton.Position = UDim2.new(0.3, 0, 1, -55)
+    mergeButton.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
+    mergeButton.Text = "✨ СЛИТЬ ✨"
+    mergeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    mergeButton.Font = Enum.Font.GothamBold
+    mergeButton.TextScaled = true
+    mergeButton.Parent = menuFrame
+    
+    local mergeCorner = Instance.new("UICorner")
+    mergeCorner.CornerRadius = UDim.new(0, 8)
+    mergeCorner.Parent = mergeButton
+    
+    -- Кнопка закрытия
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -35, 0, 5)
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    closeButton.Text = "✕"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextScaled = true
+    closeButton.Parent = menuFrame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 6)
+    closeCorner.Parent = closeButton
+    
+    -- Обработчики
+    mergeButton.MouseButton1Click:Connect(function()
+        local selectedCards = SoulStackUI.GetSelectedCards()
+        if #selectedCards >= 2 and #selectedCards &lt;= 3 then
+            NetworkBridge.RequestMerge(selectedCards)
+            SoulStackUI.ClearSelection()
+            CraftingMenu.Close()
+        else
+            print("[CraftingMenu] Нужно выбрать 2 или 3 карточки")
+            -- TODO: показать уведомление
+        end
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        CraftingMenu.Close()
+    end)
+    
+    return menuFrame
+end
+
+-- ============================================
+-- ПУБЛИЧНЫЕ ФУНКЦИИ
+-- ============================================
+
+function CraftingMenu.Open()
+    if not menuFrame then
+        CreateMenu()
+    end
+    if menuFrame then
+        menuFrame.Visible = true
+        isOpen = true
+        print("[CraftingMenu] 🔮 Окно слияния открыто")
+    end
+end
+
+function CraftingMenu.Close()
+    if menuFrame then
+        menuFrame.Visible = false
+        isOpen = false
+        print("[CraftingMenu] 🔮 Окно слияния закрыто")
+    end
+end
+
+function CraftingMenu.Toggle()
+    if isOpen then
+        CraftingMenu.Close()
+    else
+        CraftingMenu.Open()
+    end
+end
+
+function CraftingMenu.Init()
+    print("[CraftingMenu] 🔮 Инициализация окна слияния")
+    CreateMenu()
+    print("[CraftingMenu] ✅ Готов")
+end
+
+return CraftingMenu</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="27">
+        <Properties>
+          <string name="Name">SlotPanel</string>
+          <string name="Source">-- src/ui/SlotPanel.lua
+-- Панель слотов армии (3-20 ячеек)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local SlotPanel = {}
+
+local panel = nil
+local slotFrames = {}  -- [slotIndex] = {frame, icon, healthBar, statusText}
+
+-- ============================================
+-- СОЗДАНИЕ ПАНЕЛИ
+-- ============================================
+
+local function CreatePanel()
+    if panel then return panel end
+    
+    local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
+    if not screenGui then return nil end
+    
+    panel = Instance.new("Frame")
+    panel.Name = "SlotPanel"
+    panel.Size = UDim2.new(0, 500, 0, 85)
+    panel.Position = UDim2.new(0, 10, 1, -95)
+    panel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    panel.BackgroundTransparency = 0.3
+    panel.BorderSizePixel = 0
+    panel.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = panel
+    
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.Padding = UDim.new(0, 6)
+    layout.Parent = panel
+    
+    return panel
+end
+
+-- Создать одну ячейку слота
+local function CreateSlotFrame(slotIndex: number)
+    local frame = Instance.new("Frame")
+    frame.Name = `Slot_{slotIndex}`
+    frame.Size = UDim2.new(0, 75, 0, 75)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    frame.BorderSizePixel = 1
+    frame.BorderColor3 = Color3.fromRGB(80, 80, 100)
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(1, -10, 1, -10)
+    icon.Position = UDim2.new(0, 5, 0, 5)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://0"
+    icon.Parent = frame
+    
+    local healthBar = Instance.new("Frame")
+    healthBar.Name = "HealthBar"
+    healthBar.Size = UDim2.new(1, 0, 0, 5)
+    healthBar.Position = UDim2.new(0, 0, 1, -5)
+    healthBar.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    healthBar.BorderSizePixel = 0
+    healthBar.Visible = false
+    healthBar.Parent = frame
+    
+    local statusText = Instance.new("TextLabel")
+    statusText.Name = "Status"
+    statusText.Size = UDim2.new(1, 0, 0, 20)
+    statusText.Position = UDim2.new(0, 0, 0, 0)
+    statusText.BackgroundTransparency = 1
+    statusText.Text = "⚰️"
+    statusText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    statusText.TextScaled = true
+    statusText.Font = Enum.Font.GothamBold
+    statusText.Parent = frame
+    
+    return frame, {icon = icon, healthBar = healthBar, statusText = statusText}
+end
+
+-- ============================================
+-- ПУБЛИЧНЫЕ ФУНКЦИИ
+-- ============================================
+
+-- Обновить количество и содержимое слотов
+function SlotPanel.Update(maxSlots: number, activeSlots: table)
+    local container = CreatePanel()
+    if not container then return end
+    
+    -- Создаем недостающие слоты
+    for i = 1, maxSlots do
+        if not slotFrames[i] then
+            local frame, components = CreateSlotFrame(i)
+            frame.Parent = container
+            slotFrames[i] = {frame = frame, components = components}
+        end
+    end
+    
+    -- Скрываем лишние слоты
+    for i = maxSlots + 1, #slotFrames do
+        if slotFrames[i] then
+            slotFrames[i].frame.Visible = false
+        end
+    end
+    
+    -- Обновляем содержимое
+    for i = 1, maxSlots do
+        local slot = slotFrames[i]
+        if slot then
+            slot.frame.Visible = true
+            local unit = activeSlots[i]
+            
+            if unit then
+                -- В слоте есть юнит
+                if unit.IsAlive then
+                    slot.components.statusText.Text = "❤️"
+                    slot.components.healthBar.Visible = true
+                    local maxHealth = 100 -- TODO: из BaseStats
+                    local percent = math.clamp(unit.CurrentHealth / maxHealth, 0, 1)
+                    slot.components.healthBar.Size = UDim2.new(percent, 0, 0, 5)
+                    slot.components.healthBar.BackgroundColor3 = unit.CurrentHealth > 30 and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+                else
+                    slot.components.statusText.Text = "⚰️"
+                    slot.components.healthBar.Visible = false
+                end
+                -- TODO: установить иконку юнита
+            else
+                -- Пустой слот
+                slot.components.statusText.Text = "➕"
+                slot.components.healthBar.Visible = false
+            end
+        end
+    end
+end
+
+-- Получить количество слотов
+function SlotPanel.GetSlotCount(): number
+    return #slotFrames
+end
+
+-- Инициализация
+function SlotPanel.Init()
+    print("[SlotPanel] 🎛️ Инициализация панели слотов")
+    CreatePanel()
+    print("[SlotPanel] ✅ Готов")
+end
+
+return SlotPanel</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="28">
+        <Properties>
+          <string name="Name">SoulStackUI</string>
+          <string name="Source">-- src/ui/SoulStackUI.lua
+-- Отображение стека карточек (можно скрыть/показать)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
+
+local UIManager = require(script.Parent.UIManager)
+
+-- ============================================
+-- Создание панели стека
+-- ============================================
+
+local SoulStackUI = {}
+
+local panel = nil
+local isVisible = true
+local cardButtons = {}  -- [cardId] = button
+
+local function CreateSoulStackPanel()
+    if panel then return end
+    
+    panel = Instance.new("Frame")
+    panel.Name = "SoulStackPanel"
+    panel.Size = UDim2.new(0, 300, 0, 400)
+    panel.Position = UDim2.new(1, -310, 0, 10)
+    panel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    panel.BackgroundTransparency = 0.1
+    panel.BorderSizePixel = 0
+    panel.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = panel
+    
+    -- Заголовок с кнопкой сворачивания
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 30)
+    header.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    header.Parent = panel
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(0.8, 0, 1, 0)
+    title.Position = UDim2.new(0, 5, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "📇 Стек душ"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Font = Enum.Font.GothamBold
+    title.Parent = header
+    
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 30, 1, 0)
+    toggleButton.Position = UDim2.new(1, -30, 0, 0)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    toggleButton.Text = "▼"
+    toggleButton.Font = Enum.Font.GothamBold
+    toggleButton.Parent = header
+    
+    -- Скроллинг для списка карточек
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Name = "ScrollFrame"
+    scrollFrame.Size = UDim2.new(1, 0, 1, -30)
+    scrollFrame.Position = UDim2.new(0, 0, 0, 30)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 8
+    scrollFrame.Parent = panel
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.FillDirection = Enum.FillDirection.Vertical
+    listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    listLayout.Padding = UDim.new(0, 5)
+    listLayout.Parent = scrollFrame
+    
+    -- Кнопка сворачивания
+    local isExpanded = true
+    toggleButton.MouseButton1Click:Connect(function()
+        isExpanded = not isExpanded
+        scrollFrame.Visible = isExpanded
+        toggleButton.Text = isExpanded and "▼" or "▲"
+        panel.Size = isExpanded and UDim2.new(0, 300, 0, 400) or UDim2.new(0, 300, 0, 30)
+    end)
+    
+    return panel, scrollFrame, listLayout
+end
+
+-- Создать карточку для отображения
+local function CreateCardButton(cardId: string, unitTypeId: string, modifiers: table)
+    local button = Instance.new("TextButton")
+    button.Name = `Card_{cardId}`
+    button.Size = UDim2.new(0.9, 0, 0, 60)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    button.BorderSizePixel = 0
+    button.Text = ""
+    button.Parent = nil  -- Будет добавлен в список позже
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = button
+    
+    -- Название юнита
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, -10, 0, 20)
+    nameLabel.Position = UDim2.new(0, 5, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = unitTypeId
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = button
+    
+    -- Иконки баффов
+    local buffText = ""
+    for buffName, _ in pairs(modifiers or {}) do
+        buffText = buffText .. "✨ "
+    end
+    if buffText ~= "" then
+        local buffLabel = Instance.new("TextLabel")
+        buffLabel.Size = UDim2.new(1, -10, 0, 15)
+        buffLabel.Position = UDim2.new(0, 5, 0, 25)
+        buffLabel.BackgroundTransparency = 1
+        buffLabel.Text = buffText
+        buffLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+        buffLabel.TextXAlignment = Enum.TextXAlignment.Left
+        buffLabel.Font = Enum.Font.Gotham
+        buffLabel.Parent = button
+    end
+    
+    -- Кнопка выбора (для мержа)
+    local selectCheckbox = Instance.new("ImageButton")
+    selectCheckbox.Name = "SelectCheckbox"
+    selectCheckbox.Size = UDim2.new(0, 25, 0, 25)
+    selectCheckbox.Position = UDim2.new(1, -35, 0.5, -12)
+    selectCheckbox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    selectCheckbox.Image = "rbxassetid://0"  -- Пустая галочка
+    selectCheckbox.Parent = button
+    
+    local selected = false
+    selectCheckbox.MouseButton1Click:Connect(function()
+        selected = not selected
+        selectCheckbox.Image = selected and "rbxassetid://0" or "rbxassetid://0"  -- TODO: иконки галочки
+        button.BackgroundColor3 = selected and Color3.fromRGB(0, 100, 150) or Color3.fromRGB(40, 40, 50)
+    end)
+    
+    return button, {selectCheckbox = selectCheckbox, selected = selected}
+end
+
+-- ============================================
+-- ПУБЛИЧНЫЕ ФУНКЦИИ
+-- ============================================
+
+-- Обновить отображение стека карточек
+function SoulStackUI.UpdateSoulStack(soulStack: table)
+    if not panel then
+        CreateSoulStackPanel()
+    end
+    
+    -- Очищаем старые кнопки
+    for _, btn in pairs(cardButtons) do
+        btn:Destroy()
+    end
+    cardButtons = {}
+    
+    local scrollFrame = panel:FindFirstChild("ScrollFrame")
+    if not scrollFrame then return end
+    
+    -- Создаем новые карточки
+    local yOffset = 0
+    for cardId, card in pairs(soulStack) do
+        local button, _ = CreateCardButton(cardId, card.UnitTypeId, card.Modifiers)
+        button.Parent = scrollFrame
+        cardButtons[cardId] = button
+        yOffset = yOffset + 65
+    end
+    
+    -- Обновляем размер Canvas
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(yOffset, 400))
+end
+
+-- Получить выбранные карточки
+function SoulStackUI.GetSelectedCards(): { string }
+    local selected = {}
+    for cardId, button in pairs(cardButtons) do
+        local selectCheckbox = button:FindFirstChild("SelectCheckbox")
+        if selectCheckbox and selectCheckbox.Image == "rbxassetid://0" then  -- TODO: проверка на выделение
+            table.insert(selected, cardId)
+        end
+    end
+    return selected
+end
+
+-- Очистить выделение
+function SoulStackUI.ClearSelection()
+    for cardId, button in pairs(cardButtons) do
+        local selectCheckbox = button:FindFirstChild("SelectCheckbox")
+        if selectCheckbox then
+            selectCheckbox.Image = "rbxassetid://0"
+            button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        end
+    end
+end
+
+-- Показать/скрыть панель
+function SoulStackUI.SetVisible(visible: boolean)
+    if panel then
+        panel.Visible = visible
+    end
+    isVisible = visible
+end
+
+function SoulStackUI.IsVisible(): boolean
+    return isVisible
+end
+
+-- Инициализация
+function SoulStackUI.Init()
+    print("[SoulStackUI] 📇 Инициализация стека карточек")
+    CreateSoulStackPanel()
+    SoulStackUI.SetVisible(true)
+    print("[SoulStackUI] ✅ Готов")
+end
+
+return SoulStackUI</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="29">
+        <Properties>
+          <string name="Name">UIManager</string>
+          <string name="Source">-- src/ui/UIManager.lua
+-- Главный менеджер интерфейса (упрощенная версия)
+-- Компоненты вынесены в папку components/
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- Подключаем UI компоненты
+local ManaBar = require(script.Parent.components.ManaBar)
+local LevelPanel = require(script.Parent.components.LevelPanel)
+local CubeButton = require(script.Parent.components.CubeButton)
+local CraftingButton = require(script.Parent.components.CraftingButton)
+local ToggleStackButton = require(script.Parent.components.ToggleStackButton)
+local HotkeyText = require(script.Parent.components.HotkeyText)
+
+-- Подключаем основные UI модули
+local SlotPanel = require(script.Parent.SlotPanel)
+local SoulStackUI = require(script.Parent.SoulStackUI)
+local CraftingMenu = require(script.Parent.CraftingMenu)
+local AggroBar = require(script.Parent.AggroBar)
+
+-- Подключаем NetworkBridge для отправки запросов
+local NetworkBridge = require(script.Parent.Parent.client.NetworkBridge)
+
+-- ============================================
+-- ScreenGui
+-- ============================================
+
+local screenGui = nil
+
+local function CreateScreenGui()
+    if screenGui then return screenGui end
+    
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "NecromancerUI"
+    screenGui.IgnoreGuiInset = true
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+    
+    return screenGui
+end
+
+-- ============================================
+-- Компоненты (глобальные ссылки)
+-- ============================================
+
+local Components = {
+    ManaBar = nil,
+    LevelPanel = nil,
+    CubeBtn = nil,
+}
+
+-- ============================================
+-- ПУБЛИЧНЫЕ ФУНКЦИИ
+-- ============================================
+
+local UIManager = {}
+
+function UIManager.UpdateMana(current: number, max: number)
+    if Components.ManaBar then
+        Components.ManaBar.Update(current, max)
+    end
+end
+
+function UIManager.UpdateCubeButton(canEnter: boolean, cooldownRemaining: number)
+    if Components.CubeBtn then
+        Components.CubeBtn.Update(canEnter, cooldownRemaining)
+    end
+end
+
+function UIManager.UpdateLevel(level: number, experience: number, nextLevelExp: number)
+    if Components.LevelPanel then
+        Components.LevelPanel.Update(level, experience, nextLevelExp)
+    end
+end
+
+function UIManager.UpdateAggro(aggroLevel: number, maxAggro: number)
+    AggroBar.Update(aggroLevel, maxAggro or 100)
+end
+
+function UIManager.UpdateSlots(maxSlots: number, activeSlots: table)
+    SlotPanel.Update(maxSlots, activeSlots)
+end
+
+function UIManager.UpdateSoulStack(soulStack: table)
+    SoulStackUI.UpdateSoulStack(soulStack)
+end
+
+function UIManager.ShowNotification(text: string, duration: number)
+    print(`[UIManager] 🔔 ${text}`)
+end
+
+function UIManager.ShowLevelUp(level: number)
+    UIManager.ShowNotification(`🎉 ПОВЫШЕНИЕ УРОВНЯ! Вы достигли ${level} уровня 🎉`, 3)
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function UIManager.Init()
+    print("[UIManager] 🎨 Инициализация интерфейса")
+    
+    -- Создаем основной Gui
+    local gui = CreateScreenGui()
+    
+    -- Создаем компоненты
+    Components.ManaBar = ManaBar.New(gui)
+    Components.LevelPanel = LevelPanel.New(gui)
+    Components.CubeBtn = CubeButton.New(gui, function()
+        if Components.CubeBtn.IsActive() then
+            NetworkBridge.RequestEnterCube()
+        end
+    end)
+    
+    CraftingButton.New(gui, function()
+        CraftingMenu.Toggle()
+    end)
+    
+    ToggleStackButton.New(gui, function(isVisible)
+        SoulStackUI.SetVisible(isVisible)
+    end)
+    
+    HotkeyText.New(gui)
+    
+    -- Инициализируем компоненты
+    SlotPanel.Init()
+    AggroBar.Init()
+    CraftingMenu.Init()
+    SoulStackUI.Init()
+    
+    -- Начальные значения
+    UIManager.UpdateMana(50, 50)
+    UIManager.UpdateCubeButton(false, 0)
+    UIManager.UpdateLevel(1, 0, 100)
+    UIManager.UpdateAggro(0, 100)
+    UIManager.UpdateSlots(3, {})
+    UIManager.UpdateSoulStack({})
+    
+    print("[UIManager] ✅ Интерфейс создан")
+end
+
+return UIManager</string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="30">
+        <Properties>
+          <string name="Name">components</string>
+        </Properties>
+        <Item class="ModuleScript" referent="31">
+          <Properties>
+            <string name="Name">CraftingButton</string>
+            <string name="Source">-- src/ui/components/CraftingButton.lua
+-- Компонент: кнопка открытия меню слияния
+
+local CraftingButton = {}
+
+function CraftingButton.New(parent: Instance, onClick: () -> ())
+    local button = Instance.new("ImageButton")
+    button.Name = "CraftingButton"
+    button.Size = UDim2.new(0, 50, 0, 50)
+    button.Position = UDim2.new(1, -65, 1, -80)
+    button.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
+    button.BorderSizePixel = 0
+    button.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = button
+    
+    local icon = Instance.new("TextLabel")
+    icon.Size = UDim2.new(1, 0, 1, 0)
+    icon.BackgroundTransparency = 1
+    icon.Text = "🔮"
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.TextScaled = true
+    icon.Font = Enum.Font.GothamBold
+    icon.Parent = button
+    
+    if onClick then
+        button.MouseButton1Click:Connect(onClick)
+    end
+    
+    return button
+end
+
+return CraftingButton</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="32">
+          <Properties>
+            <string name="Name">CubeButton</string>
+            <string name="Source">-- src/ui/components/CubeButton.lua
+-- Компонент: кнопка входа в куб
+
+local CubeButton = {}
+
+local function Create(parent: Instance)
+    local button = Instance.new("ImageButton")
+    button.Name = "CubeButton"
+    button.Size = UDim2.new(0, 140, 0, 55)
+    button.Position = UDim2.new(0.5, -70, 1, -80)
+    button.BackgroundColor3 = Color3.fromRGB(0, 120, 180)
+    button.BorderSizePixel = 0
+    button.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = button
+    
+    local icon = Instance.new("TextLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 35, 1, 0)
+    icon.BackgroundTransparency = 1
+    icon.Text = "🧊"
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.TextScaled = true
+    icon.Font = Enum.Font.GothamBold
+    icon.Parent = button
+    
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Size = UDim2.new(1, -40, 1, 0)
+    label.Position = UDim2.new(0, 40, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "ВОЙТИ В КУБ"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = button
+    
+    local cooldownText = Instance.new("TextLabel")
+    cooldownText.Name = "CooldownText"
+    cooldownText.Size = UDim2.new(1, 0, 1, 0)
+    cooldownText.BackgroundTransparency = 1
+    cooldownText.Text = ""
+    cooldownText.TextColor3 = Color3.fromRGB(255, 200, 0)
+    cooldownText.TextScaled = true
+    cooldownText.Font = Enum.Font.GothamBold
+    cooldownText.Visible = false
+    cooldownText.Parent = button
+    
+    return {
+        Button = button,
+        Label = label,
+        CooldownText = cooldownText,
+    }
+end
+
+function CubeButton.New(parent: Instance, onClick: () -> ())
+    local self = {}
+    self.components = Create(parent)
+    self.Active = false
+    
+    if onClick then
+        self.components.Button.MouseButton1Click:Connect(onClick)
+    end
+    
+    function self.Update(canEnter: boolean, cooldownRemaining: number)
+        if cooldownRemaining > 0 then
+            self.components.Button.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+            self.components.Label.Text = "КУЛДАУН"
+            self.components.CooldownText.Visible = true
+            self.components.CooldownText.Text = `${math.ceil(cooldownRemaining)} сек`
+            self.Active = false
+        else
+            self.components.Button.BackgroundColor3 = canEnter and Color3.fromRGB(0, 120, 200) or Color3.fromRGB(80, 80, 100)
+            self.components.Label.Text = canEnter and "ВОЙТИ В КУБ" or "НЕТ МАНЫ"
+            self.components.CooldownText.Visible = false
+            self.Active = canEnter
+        end
+    end
+    
+    function self.IsActive(): boolean
+        return self.Active
+    end
+    
+    function self.Click()
+        if self.Active then
+            self.components.Button:Click()
+        end
+    end
+    
+    return self
+end
+
+return CubeButton</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="33">
+          <Properties>
+            <string name="Name">HotkeyText</string>
+            <string name="Source">-- src/ui/components/HotkeyText.lua
+-- Компонент: текст с хоткеями
+
+local HotkeyText = {}
+
+function HotkeyText.New(parent: Instance)
+    local text = Instance.new("TextLabel")
+    text.Name = "HotkeyText"
+    text.Size = UDim2.new(0, 200, 0, 20)
+    text.Position = UDim2.new(1, -210, 1, -25)
+    text.BackgroundTransparency = 1
+    text.Text = "[C] Куб  [M] Слияние  [H] Скрыть стек"
+    text.TextColor3 = Color3.fromRGB(150, 150, 150)
+    text.TextSize = 12
+    text.Font = Enum.Font.Gotham
+    text.TextXAlignment = Enum.TextXAlignment.Right
+    text.Parent = parent
+    
+    return text
+end
+
+return HotkeyText</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="34">
+          <Properties>
+            <string name="Name">LevelPanel</string>
+            <string name="Source">-- src/ui/components/LevelPanel.lua
+-- Компонент: уровень и опыт
+
+local LevelPanel = {}
+
+local function Create(parent: Instance)
+    local frame = Instance.new("Frame")
+    frame.Name = "LevelPanel"
+    frame.Size = UDim2.new(0, 200, 0, 50)
+    frame.Position = UDim2.new(0, 15, 0, 60)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local levelText = Instance.new("TextLabel")
+    levelText.Name = "LevelText"
+    levelText.Size = UDim2.new(0, 60, 1, 0)
+    levelText.BackgroundTransparency = 1
+    levelText.Text = "Ур. 1"
+    levelText.TextColor3 = Color3.fromRGB(255, 200, 100)
+    levelText.TextScaled = true
+    levelText.Font = Enum.Font.GothamBold
+    levelText.Parent = frame
+    
+    local expBar = Instance.new("Frame")
+    expBar.Name = "ExpBar"
+    expBar.Size = UDim2.new(0.65, 0, 1, -10)
+    expBar.Position = UDim2.new(0.35, 0, 0, 5)
+    expBar.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    expBar.BorderSizePixel = 0
+    expBar.Parent = frame
+    
+    local expBarCorner = Instance.new("UICorner")
+    expBarCorner.CornerRadius = UDim.new(0, 4)
+    expBarCorner.Parent = expBar
+    
+    local expFill = Instance.new("Frame")
+    expFill.Name = "ExpFill"
+    expFill.Size = UDim2.new(0, 0, 1, 0)
+    expFill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    expFill.BorderSizePixel = 0
+    expFill.Parent = expBar
+    
+    local expFillCorner = Instance.new("UICorner")
+    expFillCorner.CornerRadius = UDim.new(0, 4)
+    expFillCorner.Parent = expFill
+    
+    local expText = Instance.new("TextLabel")
+    expText.Name = "ExpText"
+    expText.Size = UDim2.new(1, -5, 1, 0)
+    expText.Position = UDim2.new(0, 5, 0, 0)
+    expText.BackgroundTransparency = 1
+    expText.Text = "0/100"
+    expText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    expText.TextSize = 12
+    expText.Font = Enum.Font.Gotham
+    expText.TextXAlignment = Enum.TextXAlignment.Left
+    expText.Parent = expBar
+    
+    return {
+        Frame = frame,
+        LevelText = levelText,
+        ExpFill = expFill,
+        ExpText = expText,
+    }
+end
+
+function LevelPanel.New(parent: Instance)
+    local self = {}
+    self.components = Create(parent)
+    
+    function self.Update(level: number, experience: number, nextLevelExp: number)
+        self.components.LevelText.Text = `Ур. ${level}`
+        local percent = experience / nextLevelExp
+        self.components.ExpFill.Size = UDim2.new(percent, 0, 1, 0)
+        self.components.ExpText.Text = `${experience}/${nextLevelExp}`
+    end
+    
+    return self
+end
+
+return LevelPanel</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="35">
+          <Properties>
+            <string name="Name">ManaBar</string>
+            <string name="Source">-- src/ui/components/ManaBar.lua
+-- Компонент: панель маны
+
+local ManaBar = {}
+
+local function Create(parent: Instance)
+    local frame = Instance.new("Frame")
+    frame.Name = "ManaBar"
+    frame.Size = UDim2.new(0, 280, 0, 35)
+    frame.Position = UDim2.new(0, 15, 0, 15)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local fill = Instance.new("Frame")
+    fill.Name = "Fill"
+    fill.Size = UDim2.new(1, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = frame
+    
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 8)
+    fillCorner.Parent = fill
+    
+    local icon = Instance.new("TextLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 30, 1, 0)
+    icon.BackgroundTransparency = 1
+    icon.Text = "💙"
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.TextScaled = true
+    icon.Font = Enum.Font.GothamBold
+    icon.Parent = frame
+    
+    local text = Instance.new("TextLabel")
+    text.Name = "Text"
+    text.Size = UDim2.new(1, -35, 1, 0)
+    text.Position = UDim2.new(0, 35, 0, 0)
+    text.BackgroundTransparency = 1
+    text.Text = "50/50 маны"
+    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    text.TextScaled = true
+    text.Font = Enum.Font.GothamBold
+    text.TextXAlignment = Enum.TextXAlignment.Left
+    text.Parent = frame
+    
+    return {
+        Frame = frame,
+        Fill = fill,
+        Text = text,
+    }
+end
+
+function ManaBar.New(parent: Instance)
+    local self = {}
+    self.components = Create(parent)
+    
+    function self.Update(current: number, max: number)
+        local percent = current / max
+        self.components.Fill.Size = UDim2.new(percent, 0, 1, 0)
+        
+        if percent &lt; 0.2 then
+            self.components.Fill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        elseif percent &lt; 0.5 then
+            self.components.Fill.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+        else
+            self.components.Fill.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+        end
+        
+        self.components.Text.Text = `${math.floor(current)}/${max} маны`
+    end
+    
+    return self
+end
+
+return ManaBar</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="36">
+          <Properties>
+            <string name="Name">ToggleStackButton</string>
+            <string name="Source">-- src/ui/components/ToggleStackButton.lua
+-- Компонент: кнопка скрытия/показа стека карточек
+
+local ToggleStackButton = {}
+
+function ToggleStackButton.New(parent: Instance, onToggle: (visible: boolean) -> ())
+    local button = Instance.new("ImageButton")
+    button.Name = "ToggleStackButton"
+    button.Size = UDim2.new(0, 40, 0, 40)
+    button.Position = UDim2.new(1, -55, 0, 60)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    button.BorderSizePixel = 0
+    button.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    local icon = Instance.new("TextLabel")
+    icon.Size = UDim2.new(1, 0, 1, 0)
+    icon.BackgroundTransparency = 1
+    icon.Text = "📇"
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.TextScaled = true
+    icon.Font = Enum.Font.GothamBold
+    icon.Parent = button
+    
+    local isVisible = true
+    
+    button.MouseButton1Click:Connect(function()
+        isVisible = not isVisible
+        if onToggle then
+            onToggle(isVisible)
+        end
+    end)
+    
+    return button
+end
+
+return ToggleStackButton</string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="LocalScript" referent="37">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+        <string name="Source">-- src/server/Init.server.lua
+-- ТОЧКА ВХОДА СЕРВЕРА — ЗАПУСК ВСЕХ СЕРВИСОВ
+
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+print("=" :rep(60))
+print("🧙‍♂️ NECROMANCER GAME - СЕРВЕР ЗАПУЩЕН")
+print("=" :rep(60))
+
+-- Загружаем конфиги
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Buffs = require(ReplicatedStorage.Constants.Buffs)
+local Recipes = require(ReplicatedStorage.Constants.Recipes)
+
+print("[Init] 📊 Конфиги загружены")
+
+-- ============================================
+-- ЗАПУСК СЕРВИСОВ (по порядку зависимостей)
+-- ============================================
+
+-- 1. ArmyService
+local ArmyService = require(ServerStorage.Modules.ArmyService)
+ArmyService.Init()
+
+-- 2. CorpseManager
+local CorpseManager = require(ServerStorage.Modules.CorpseManager)
+CorpseManager.Start()
+
+-- 3. RitualService
+local RitualService = require(ServerStorage.Modules.RitualService)
+RitualService.Init(ArmyService, CorpseManager)
+
+-- 4. UnitFactory
+local UnitFactory = require(ServerStorage.Modules.UnitFactory)
+UnitFactory.Init(ArmyService)
+
+-- 5. CraftingService
+local CraftingService = require(ServerStorage.Modules.CraftingService)
+CraftingService.Init(ArmyService)
+
+-- 6. AggroService
+local AggroService = require(ServerStorage.Modules.AggroService)
+AggroService.Init(ArmyService)
+
+-- 7. TestEnemySpawner (ТЕСТОВЫЙ! Для проверки)
+local TestEnemySpawner = require(ServerStorage.Modules.TestEnemySpawner)
+TestEnemySpawner.Init(ArmyService, CorpseManager)
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ
+-- ============================================
+
+for _, player in ipairs(Players:GetPlayers()) do
+    AggroService.InitPlayer(player)
+    print(`[Init] Инициализирована агрессия для ${player.Name}`)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    AggroService.InitPlayer(player)
+    print(`[Init] 👋 ${player.Name} присоединился`)
+end)
+
+print("=" :rep(60))
+print("[Init] ✅ ВСЕ СЕРВИСЫ ЗАГРУЖЕНЫ:")
+print("   1. ArmyService       - мана, уровни, слоты")
+print("   2. CorpseManager     - таймеры гниения")
+print("   3. RitualService     - воскрешение")
+print("   4. UnitFactory       - спавн юнитов")
+print("   5. CraftingService   - слияние карточек")
+print("   6. AggroService      - гнев деревни")
+print("   7. TestEnemySpawner  - тестовые враги")
+print("=" :rep(60))
+print("[Init] 🎮 СЕРВЕР ГОТОВ К ПРИЕМУ ИГРОКОВ")
+print("=" :rep(60))</string>
+      </Properties>
+      <Item class="ModuleScript" referent="38">
+        <Properties>
+          <string name="Name">CameraController</string>
+          <string name="Source">-- src/client/CameraController.lua
+-- Управление камерой: режим тела и режим куба
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- ============================================
+-- Конфигурация
+-- ============================================
+
+local CONFIG = {
+    -- Режим тела (слежка за персонажем)
+    BodyMode = {
+        Offset = Vector3.new(0, 5, 15),  -- Сзади-сверху
+        Smoothness = 0.1,
+    },
+    -- Режим куба (свободная камера)
+    CubeMode = {
+        Distance = 30,      -- Расстояние от центра
+        Height = 15,        -- Высота
+        Speed = 0.5,        -- Скорость вращения
+        ZoomSpeed = 2,      -- Скорость зума
+        MinDistance = 10,
+        MaxDistance = 60,
+    },
+}
+
+-- ============================================
+-- Состояние
+-- ============================================
+
+local currentMode = "Body"  -- "Body" или "Cube"
+local cubeRotation = 0      -- Угол поворота камеры в кубе
+local cubeDistance = CONFIG.CubeMode.Distance
+local cubeHeight = CONFIG.CubeMode.Height
+
+local playerCharacter = nil
+local playerHumanoidRootPart = nil
+
+-- ============================================
+-- Режим тела (обычная камера за персонажем)
+-- ============================================
+
+local function UpdateBodyCamera()
+    if not playerCharacter or not playerHumanoidRootPart then
+        playerCharacter = player.Character
+        if playerCharacter then
+            playerHumanoidRootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
+        end
+        return
+    end
+    
+    local targetPosition = playerHumanoidRootPart.Position + CONFIG.BodyMode.Offset
+    camera.CFrame = camera.CFrame:Lerp(CFrame.new(targetPosition, playerHumanoidRootPart.Position), CONFIG.BodyMode.Smoothness)
+end
+
+-- ============================================
+-- Режим куба (свободная камера, управление мышью)
+-- ============================================
+
+local function UpdateCubeCamera()
+    -- Получаем позицию тела игрока (оно стоит в кубе)
+    local bodyPosition = Vector3.zero
+    if playerCharacter and playerHumanoidRootPart then
+        bodyPosition = playerHumanoidRootPart.Position
+    end
+    
+    -- Вычисляем позицию камеры
+    local angleRad = math.rad(cubeRotation)
+    local offsetX = math.sin(angleRad) * cubeDistance
+    local offsetZ = math.cos(angleRad) * cubeDistance
+    
+    local cameraPosition = bodyPosition + Vector3.new(offsetX, cubeHeight, offsetZ)
+    local lookAt = bodyPosition + Vector3.new(0, cubeHeight * 0.5, 0)
+    
+    camera.CFrame = CFrame.new(cameraPosition, lookAt)
+end
+
+-- ============================================
+-- Обработка ввода в режиме куба
+-- ============================================
+
+local function HandleCubeInput()
+    -- Вращение камеры (правой кнопкой мыши + движение)
+    if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local delta = UserInputService:GetMouseDelta()
+        cubeRotation = cubeRotation - delta.X * CONFIG.CubeMode.Speed
+    end
+    
+    -- Зум (колесико мыши)
+    local zoomDelta = UserInputService:GetMouseDelta().Z
+    if zoomDelta ~= 0 then
+        cubeDistance = cubeDistance - zoomDelta * CONFIG.CubeMode.ZoomSpeed
+        cubeDistance = math.clamp(cubeDistance, CONFIG.CubeMode.MinDistance, CONFIG.CubeMode.MaxDistance)
+    end
+end
+
+-- ============================================
+-- Публичные функции
+-- ============================================
+
+local CameraController = {}
+
+-- Переключить режим камеры
+function CameraController.SetMode(mode: string)
+    currentMode = mode
+    print(`[CameraController] 🎥 Режим камеры: ${mode}`)
+    
+    if mode == "Cube" then
+        -- Сохраняем текущее положение камеры относительно тела
+        if playerCharacter and playerHumanoidRootPart then
+            local bodyPos = playerHumanoidRootPart.Position
+            local camOffset = camera.CFrame.Position - bodyPos
+            cubeDistance = math.sqrt(camOffset.X^2 + camOffset.Z^2)
+            cubeHeight = camOffset.Y
+            cubeRotation = math.atan2(camOffset.X, camOffset.Z)
+        end
+        UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+    else
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+    end
+end
+
+-- Получить текущий режим
+function CameraController.GetMode(): string
+    return currentMode
+}
+
+-- Обновление камеры (вызывается каждый кадр)
+function CameraController.Update(deltaTime: number)
+    if currentMode == "Cube" then
+        HandleCubeInput()
+        UpdateCubeCamera()
+    else
+        UpdateBodyCamera()
+    end
+end
+
+-- Инициализация
+function CameraController.Init()
+    print("[CameraController] 🎥 Инициализация камеры")
+    
+    -- Ждем появления персонажа
+    player.CharacterAdded:Connect(function(character)
+        playerCharacter = character
+        playerHumanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        print("[CameraController] Персонаж загружен")
+    end)
+    
+    if player.Character then
+        playerCharacter = player.Character
+        playerHumanoidRootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
+    end
+    
+    -- Запускаем цикл обновления
+    RunService.RenderStepped:Connect(function(deltaTime)
+        CameraController.Update(deltaTime)
+    end)
+    
+    print("[CameraController] ✅ Готов")
+end
+
+return CameraController</string>
+        </Properties>
+      </Item>
+      <Item class="LocalScript" referent="39">
+        <Properties>
+          <string name="Name">Init</string>
+          <string name="Source">-- src/server/Init.server.lua
+-- ТОЧКА ВХОДА СЕРВЕРА — ЗАПУСК ВСЕХ СЕРВИСОВ
+
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+print("=" :rep(60))
+print("🧙‍♂️ NECROMANCER GAME - СЕРВЕР ЗАПУЩЕН")
+print("=" :rep(60))
+
+-- Загружаем конфиги
+local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
+local Buffs = require(ReplicatedStorage.Constants.Buffs)
+local Recipes = require(ReplicatedStorage.Constants.Recipes)
+
+print("[Init] 📊 Конфиги загружены")
+
+-- ============================================
+-- ЗАПУСК СЕРВИСОВ (по порядку зависимостей)
+-- ============================================
+
+-- 1. ArmyService
+local ArmyService = require(ServerStorage.Modules.ArmyService)
+ArmyService.Init()
+
+-- 2. CorpseManager
+local CorpseManager = require(ServerStorage.Modules.CorpseManager)
+CorpseManager.Start()
+
+-- 3. RitualService
+local RitualService = require(ServerStorage.Modules.RitualService)
+RitualService.Init(ArmyService, CorpseManager)
+
+-- 4. UnitFactory
+local UnitFactory = require(ServerStorage.Modules.UnitFactory)
+UnitFactory.Init(ArmyService)
+
+-- 5. CraftingService
+local CraftingService = require(ServerStorage.Modules.CraftingService)
+CraftingService.Init(ArmyService)
+
+-- 6. AggroService
+local AggroService = require(ServerStorage.Modules.AggroService)
+AggroService.Init(ArmyService)
+
+-- 7. TestEnemySpawner (ТЕСТОВЫЙ! Для проверки)
+local TestEnemySpawner = require(ServerStorage.Modules.TestEnemySpawner)
+TestEnemySpawner.Init(ArmyService, CorpseManager)
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ
+-- ============================================
+
+for _, player in ipairs(Players:GetPlayers()) do
+    AggroService.InitPlayer(player)
+    print(`[Init] Инициализирована агрессия для ${player.Name}`)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    AggroService.InitPlayer(player)
+    print(`[Init] 👋 ${player.Name} присоединился`)
+end)
+
+print("=" :rep(60))
+print("[Init] ✅ ВСЕ СЕРВИСЫ ЗАГРУЖЕНЫ:")
+print("   1. ArmyService       - мана, уровни, слоты")
+print("   2. CorpseManager     - таймеры гниения")
+print("   3. RitualService     - воскрешение")
+print("   4. UnitFactory       - спавн юнитов")
+print("   5. CraftingService   - слияние карточек")
+print("   6. AggroService      - гнев деревни")
+print("   7. TestEnemySpawner  - тестовые враги")
+print("=" :rep(60))
+print("[Init] 🎮 СЕРВЕР ГОТОВ К ПРИЕМУ ИГРОКОВ")
+print("=" :rep(60))</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="40">
+        <Properties>
+          <string name="Name">InputHandler</string>
+          <string name="Source">-- src/client/InputHandler.lua
+-- Обработка кликов по объектам в мире (трупы, могилы, юниты)
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local NetworkBridge = require(script.Parent.NetworkBridge)
+local CameraController = require(script.Parent.CameraController)
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- ============================================
+-- Определение типов объектов
+-- ============================================
+
+local function GetObjectType(obj: Instance): string?
+    if not obj then return nil end
+    
+    local name = obj.Name
+    
+    -- Трупы (создаются CorpseManager'ом)
+    if string.find(name, "Corpse") or (obj.Parent and string.find(obj.Parent.Name, "Corpse")) then
+        return "Corpse"
+    end
+    
+    -- Могилы на погосте
+    if name == "Grave" or (obj.Parent and obj.Parent.Name == "Grave") then
+        return "Grave"
+    end
+    
+    -- Юниты (активные)
+    if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
+        return "Unit"
+    end
+    
+    return nil
+end
+
+-- Получить ID трупа (из названия или атрибута)
+local function GetCorpseId(obj: Instance): number?
+    -- TODO: Реальная логика получения ID трупа
+    print(`[InputHandler] Клик по трупу: ${obj.Name}`)
+    return 1  -- Заглушка
+end
+
+-- ============================================
+-- Обработчики кликов
+-- ============================================
+
+local function OnClick(obj: Instance)
+    local objectType = GetObjectType(obj)
+    
+    if not objectType then
+        -- Возможно клик по части модели
+        if obj.Parent then
+            objectType = GetObjectType(obj.Parent)
+        end
+    end
+    
+    if not objectType then
+        return
+    end
+    
+    print(`[InputHandler] 🖱️ Клик по типу: ${objectType}`)
+    
+    -- В зависимости от режима камеры
+    local cameraMode = CameraController.GetMode()
+    
+    if objectType == "Corpse" then
+        -- Труп можно воскресить ТОЛЬКО в режиме куба
+        if cameraMode == "Cube" then
+            local corpseId = GetCorpseId(obj)
+            if corpseId then
+                NetworkBridge.RequestResurrect(corpseId)
+            end
+        else
+            print("[InputHandler] ⚠️ Нельзя воскрешать трупы вне куба")
+            -- TODO: Показать уведомление игроку
+        end
+    end
+    
+    if objectType == "Grave" then
+        -- Могилы можно открывать только в режиме куба на погосте
+        if cameraMode == "Cube" then
+            print("[InputHandler] 🪦 Клик по могиле — открыть")
+            -- TODO: Открыть могилу (рандомная карточка)
+        else
+            print("[InputHandler] ⚠️ Нельзя открывать могилы вне куба")
+        end
+    end
+    
+    if objectType == "Unit" then
+        -- Управление юнитами только в режиме куба
+        if cameraMode == "Cube" then
+            print("[InputHandler] ⚔️ Клик по юниту — выбрать")
+            -- TODO: Выбрать юнита для управления
+        else
+            -- В режиме тела можно атаковать врагов
+            print("[InputHandler] ⚔️ Атака врага")
+            -- TODO: Атака от лица некроманта
+        end
+    end
+end
+
+-- ============================================
+-- Инициализация
+-- ============================================
+
+local InputHandler = {}
+
+function InputHandler.Init()
+    print("[InputHandler] 🖱️ Инициализация обработчика ввода")
+    
+    mouse.Button1Down:Connect(function()
+        local target = mouse.Target
+        if target then
+            OnClick(target)
+        end
+    end)
+    
+    print("[InputHandler] ✅ Готов")
+end
+
+return InputHandler</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="41">
+        <Properties>
+          <string name="Name">NetworkBridge</string>
+          <string name="Source">-- src/client/NetworkBridge.lua
+-- Клиентский мост для отправки запросов на сервер
+-- ВЕРСИЯ 2.0 — С ПОДДЕРЖКОЙ ARMY REMOTEEVENTS
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ============================================
+-- Получение RemoteEvent'ов
+-- ============================================
+
+local function GetRemoteEvent(folderName: string, eventName: string): RemoteEvent?
+    local folder = ReplicatedStorage:FindFirstChild(folderName)
+    if folder then
+        local event = folder:FindFirstChild(eventName)
+        if event then
+            return event
+        end
+    end
+    return nil
+end
+
+-- ============================================
+-- Отправка запросов на сервер
+-- ============================================
+
+local NetworkBridge = {}
+
+-- ========== УПРАВЛЕНИЕ КУБОМ ==========
+
+function NetworkBridge.RequestEnterCube()
+    local remote = GetRemoteEvent("ArmyRemoteEvents", "RequestEnterCube")
+    if remote then
+        remote:FireServer()
+        print("[NetworkBridge] 🧊 Запрос на вход в куб отправлен")
+    else
+        warn("[NetworkBridge] RequestEnterCube не найден")
+    end
+end
+
+function NetworkBridge.RequestExitCube(isForced: boolean)
+    local remote = GetRemoteEvent("ArmyRemoteEvents", "RequestExitCube")
+    if remote then
+        remote:FireServer(isForced or false)
+        print("[NetworkBridge] 🧊 Запрос на выход из куба отправлен")
+    else
+        warn("[NetworkBridge] RequestExitCube не найден")
+    end
+end
+
+-- ========== ВОСКРЕШЕНИЕ ==========
+
+function NetworkBridge.RequestResurrect(corpseId: number)
+    local remote = GetRemoteEvent("RitualRemoteEvents", "RequestResurrect")
+    if remote then
+        remote:FireServer(corpseId)
+        print(`[NetworkBridge] 💀 Запрос на воскрешение трупа ${corpseId} отправлен`)
+    else
+        warn("[NetworkBridge] RequestResurrect не найден")
+    end
+end
+
+-- ========== КРАФТ (СЛИЯНИЕ) ==========
+
+function NetworkBridge.RequestMerge(cardIds: { string })
+    local remote = GetRemoteEvent("CraftingRemoteEvents", "RequestMerge")
+    if remote then
+        remote:FireServer(cardIds)
+        print(`[NetworkBridge] 🔮 Запрос на слияние ${#cardIds} карточек отправлен`)
+    else
+        warn("[NetworkBridge] RequestMerge не найден")
+    end
+end
+
+function NetworkBridge.RequestEnhance(cardId: string, buffType: string)
+    local remote = GetRemoteEvent("CraftingRemoteEvents", "RequestEnhance")
+    if remote then
+        remote:FireServer(cardId, buffType)
+        print(`[NetworkBridge] ⚡ Запрос на усиление карточки ${cardId} отправлен`)
+    else
+        warn("[NetworkBridge] RequestEnhance не найден")
+    end
+end
+
+-- ========== УПРАВЛЕНИЕ ЮНИТАМИ ==========
+
+function NetworkBridge.RequestOrder(unitId: string, targetPosition: Vector3, targetUnitId: string?)
+    local remote = GetRemoteEvent("ArmyRemoteEvents", "RequestOrder")
+    if remote then
+        remote:FireServer(unitId, targetPosition, targetUnitId)
+        print(`[NetworkBridge] ⚔️ Приказ юниту ${unitId} отправлен`)
+    else
+        warn("[NetworkBridge] RequestOrder не найден")
+    end
+end
+
+-- ============================================
+-- ИНИЦИАЛИЗАЦИЯ
+-- ============================================
+
+function NetworkBridge.Init()
+    print("[NetworkBridge] 🔌 Инициализация сетевого моста")
+    
+    -- Проверяем наличие всех RemoteEvent'ов
+    local events = {
+        { folder = "ArmyRemoteEvents", name = "RequestEnterCube" },
+        { folder = "ArmyRemoteEvents", name = "RequestExitCube" },
+        { folder = "RitualRemoteEvents", name = "RequestResurrect" },
+        { folder = "CraftingRemoteEvents", name = "RequestMerge" },
+        { folder = "CraftingRemoteEvents", name = "RequestEnhance" },
+    }
+    
+    for _, event in ipairs(events) do
+        local remote = GetRemoteEvent(event.folder, event.name)
+        if not remote then
+            warn(`[NetworkBridge] ⚠️ ${event.folder}.${event.name} не найден`)
+        end
+    end
+    
+    print("[NetworkBridge] ✅ Готов к отправке запросов")
+end
+
+return NetworkBridge</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="42">
+        <Properties>
+          <string name="Name">RemoteListener</string>
+          <string name="Source">-- src/client/RemoteListener.lua
+-- Прослушивает события от сервера и обновляет UI
+-- ВЕРСИЯ 1.0 — ПОДДЕРЖКА ВСЕХ СОБЫТИЙ
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local UIManager = require(script.Parent.Parent.ui.UIManager)
+
+-- ============================================
+-- Получение RemoteEvent'ов
+-- ============================================
+
+local function GetRemoteEvent(folderName: string, eventName: string): RemoteEvent?
+    local folder = ReplicatedStorage:FindFirstChild(folderName)
+    if folder then
+        local event = folder:FindFirstChild(eventName)
+        if event then
+            return event
+        end
+    end
+    return nil
+end
+
+-- ============================================
+-- Обработчики событий
+-- ============================================
+
+-- Обновление маны
+local function OnManaUpdate(currentMana: number, maxMana: number)
+    UIManager.UpdateMana(currentMana, maxMana)
+    print(`[RemoteListener] 💙 Мана: ${currentMana}/${maxMana}`)
+end
+
+-- Обновление армии (слоты)
+local function OnArmyUpdate(maxSlots: number, activeSlots: table)
+    UIManager.UpdateSlots(maxSlots, activeSlots)
+    local count = 0
+    for _ in pairs(activeSlots) do count = count + 1 end
+    print(`[RemoteListener] 📦 Армия: ${count}/${maxSlots} слотов`)
+end
+
+-- Обновление стека карточек
+local function OnSoulStackUpdate(soulStack: table)
+    UIManager.UpdateSoulStack(soulStack)
+    local count = 0
+    for _ in pairs(soulStack) do count = count + 1 end
+    print(`[RemoteListener] 📇 Стек карточек: ${count} шт`)
+end
+
+-- Обновление уровня и опыта
+local function OnLevelUpdate(level: number, experience: number, nextLevelExp: number)
+    UIManager.UpdateLevel(level, experience, nextLevelExp)
+    print(`[RemoteListener] 📈 Уровень ${level}: ${experience}/${nextLevelExp} опыта`)
+end
+
+-- Обновление кулдауна куба
+local function OnCubeCooldownUpdate(remainingTime: number)
+    local canEnter = remainingTime &lt;= 0
+    UIManager.UpdateCubeButton(canEnter, remainingTime)
+    if remainingTime > 0 then
+        print(`[RemoteListener] ⏰ Куб: кулдаун ${remainingTime} сек`)
+    end
+end
+
+-- Обновление агрессии
+local function OnAggroUpdate(aggroLevel: number, maxAggro: number)
+    UIManager.UpdateAggro(aggroLevel, maxAggro)
+    print(`[RemoteListener] 😠 Агрессия: ${aggroLevel}/${maxAggro}`)
+end
+
+-- ============================================
+-- ПОДПИСКА НА СОБЫТИЯ
+-- ============================================
+
+local RemoteListener = {}
+
+function RemoteListener.Init()
+    print("[RemoteListener] 📡 Инициализация слушателя событий")
+    
+    -- Подписываемся на события из ArmyRemoteEvents
+    local manaEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateMana")
+    if manaEvent then
+        manaEvent.OnClientEvent:Connect(OnManaUpdate)
+        print("[RemoteListener] ✅ Подписан на UpdateMana")
+    else
+        warn("[RemoteListener] UpdateMana не найден")
+    end
+    
+    local armyEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateArmy")
+    if armyEvent then
+        armyEvent.OnClientEvent:Connect(OnArmyUpdate)
+        print("[RemoteListener] ✅ Подписан на UpdateArmy")
+    else
+        warn("[RemoteListener] UpdateArmy не найден")
+    end
+    
+    local stackEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateSoulStack")
+    if stackEvent then
+        stackEvent.OnClientEvent:Connect(OnSoulStackUpdate)
+        print("[RemoteListener] ✅ Подписан на UpdateSoulStack")
+    else
+        warn("[RemoteListener] UpdateSoulStack не найден")
+    end
+    
+    local levelEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateLevel")
+    if levelEvent then
+        levelEvent.OnClientEvent:Connect(OnLevelUpdate)
+        print("[RemoteListener] ✅ Подписан на UpdateLevel")
+    else
+        warn("[RemoteListener] UpdateLevel не найден")
+    end
+    
+    local cooldownEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateCubeCooldown")
+    if cooldownEvent then
+        cooldownEvent.OnClientEvent:Connect(OnCubeCooldownUpdate)
+        print("[RemoteListener] ✅ Подписан на UpdateCubeCooldown")
+    else
+        warn("[RemoteListener] UpdateCubeCooldown не найден")
+    end
+    
+    -- Подписываемся на события из ArmyRemoteEvents (агрессия)
+    local aggroEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateAggro")
+    if aggroEvent then
+        aggroEvent.OnClientEvent:Connect(OnAggroUpdate)
+        print("[RemoteListener] ✅ Подписан на UpdateAggro")
+    else
+        warn("[RemoteListener] UpdateAggro не найден")
+    end
+    
+    print("[RemoteListener] ✅ Готов к приему событий")
+end
+
+return RemoteListener</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+</roblox>

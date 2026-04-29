@@ -2,6 +2,13 @@
 -- Воскрешение: труп → карточка в стек (через ArmyService)
 -- Требует маны, проверяет доступность трупа
 
+-- Вспомогательная функция для подсчета
+local function tableCount(t)
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
@@ -29,13 +36,11 @@ RequestResurrect.Parent = RemoteEvents
 
 -- Получить стоимость воскрешения для юнита (из BaseStats)
 local function GetResurrectCost(unitTypeId: string): number
-    -- Базовая стоимость + возможно модификатор от силы юнита
     local unitData = BaseStats.Units[unitTypeId]
     if not unitData then
-        return BaseStats.Mana.ActionCost.Resurrect  -- по умолчанию 10
+        return BaseStats.Mana.ActionCost.Resurrect
     end
     
-    -- Чем сильнее юнит, тем дороже воскресить (опционально)
     local tierBonus = (unitData.Tier - 1) * 2
     return BaseStats.Mana.ActionCost.Resurrect + tierBonus
 end
@@ -47,8 +52,6 @@ local function CanResurrect(player: Player, corpseId: number): (boolean, string)
         return false, "Труп уже сгнил или не существует"
     end
     
-    -- Проверка владельца (опционально: только убивший может воскресить?)
-    -- Если ownerId == 0, труп ничей (можно любому)
     if corpse.OwnerId ~= 0 and corpse.OwnerId ~= player.UserId then
         return false, "Этот труп принадлежит другому игроку"
     end
@@ -73,10 +76,7 @@ end
 
 local RitualService = {}
 
--- Воскресить труп (создать карточку в стеке)
--- @return boolean, string|Card - успех, сообщение или созданная карточка
 function RitualService.ResurrectCorpse(player: Player, corpseId: number)
-    -- Проверка возможности
     local canResurrect, reason = CanResurrect(player, corpseId)
     if not canResurrect then
         print(`[RitualService] ❌ ${player.Name} не может воскресить: ${reason}`)
@@ -91,43 +91,33 @@ function RitualService.ResurrectCorpse(player: Player, corpseId: number)
     local unitTypeId = corpse.UnitTypeId
     local cost = GetResurrectCost(unitTypeId)
     
-    -- Тратим ману
     local success = ArmyService.SpendMana(player, cost, Enums.CubeAction.Resurrect)
     if not success then
         return false, "Не удалось списать ману"
     end
     
-    -- Создаем карточку
     local cardId = `card_{player.UserId}_{os.time()}_{corpseId}`
-    local unitData = BaseStats.Units[unitTypeId]
     
     local newCard = {
         CardId = cardId,
         UnitTypeId = unitTypeId,
-        Modifiers = {},  -- Пока без улучшений
+        Modifiers = {},
         IsMerged = false,
     }
     
-    -- Добавляем в стек игрока
     ArmyService.AddCardToStack(player, newCard)
-    
-    -- Удаляем труп из мира
     CorpseManager.RemoveCorpse(corpseId)
     
     print(`[RitualService] ✨ ${player.Name} воскресил ${unitTypeId} (ID: ${corpseId}) → карточка ${cardId}`)
     
-    -- TODO: Отправить клиенту обновление стека карточек
-    
     return true, newCard
 end
 
--- Получить список воскрешаемых трупов для игрока (для UI)
 function RitualService.GetResurrectableCorpses(player: Player): { [number]: any }
     local result = {}
     local allCorpses = CorpseManager.GetAllCorpses()
     
     for id, corpse in pairs(allCorpses) do
-        -- Ничей труп или принадлежит игроку
         if corpse.OwnerId == 0 or corpse.OwnerId == player.UserId then
             local cost = GetResurrectCost(corpse.UnitTypeId)
             result[id] = {
@@ -148,7 +138,6 @@ end
 -- ============================================
 
 local function SetupRemotes()
-    -- Клиент просит воскресить труп
     RequestResurrect.OnServerEvent:Connect(function(player: Player, corpseId: number)
         if type(corpseId) ~= "number" then
             print(`[RitualService] ⚠️ ${player.Name} отправил некорректный corpseId: ${corpseId}`)
@@ -158,12 +147,8 @@ local function SetupRemotes()
         local success, result = RitualService.ResurrectCorpse(player, corpseId)
         
         if success then
-            -- Отправляем подтверждение клиенту
-            -- TODO: RemoteEvent для подтверждения успеха
             print(`[RitualService] ✅ ${player.Name} успешно воскресил труп ${corpseId}`)
         else
-            -- Отправляем ошибку клиенту
-            -- TODO: RemoteEvent для отправки ошибки
             print(`[RitualService] ❌ ${player.Name} не смог воскресить: ${result}`)
         end
     end)
@@ -188,7 +173,10 @@ function RitualService.Init(armyService, corpseManager)
     print("[RitualService] ========== ИНИЦИАЛИЗАЦИЯ ==========")
     print("   - Зависимости: ArmyService ✅, CorpseManager ✅")
     print("   - Стоимость воскрешения: базово", BaseStats.Mana.ActionCost.Resurrect, "маны")
-    print("   - Количество типов юнитов для воскрешения:", table.count(BaseStats.Units))
+    
+    -- Исправленная строка 191
+    local unitCount = tableCount(BaseStats.Units)
+    print("   - Количество типов юнитов для воскрешения:", unitCount)
     print("[RitualService] ✅ Готов к работе")
 end
 

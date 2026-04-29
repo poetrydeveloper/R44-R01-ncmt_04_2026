@@ -1,6 +1,5 @@
 -- src/ui/UIManager.lua
 -- Главный менеджер интерфейса (упрощенная версия)
--- Компоненты вынесены в папку components/
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -21,8 +20,8 @@ local SoulStackUI = require(script.Parent.SoulStackUI)
 local CraftingMenu = require(script.Parent.CraftingMenu)
 local AggroBar = require(script.Parent.AggroBar)
 
--- Подключаем NetworkBridge для отправки запросов
-local NetworkBridge = require(script.Parent.Parent.client.NetworkBridge)
+-- Подключаем NetworkBridge
+local NetworkBridge = require(script.Parent.Parent.NetworkBridge)
 
 -- ============================================
 -- ScreenGui
@@ -103,8 +102,13 @@ end
 function UIManager.Init()
     print("[UIManager] 🎨 Инициализация интерфейса")
     
-    -- Создаем основной Gui
     local gui = CreateScreenGui()
+    
+    -- Инициализируем компоненты с передачей GUI
+    SlotPanel.Init(gui)
+    AggroBar.Init(gui)
+    SoulStackUI.Init(gui)
+    CraftingMenu.Init(gui, SoulStackUI, NetworkBridge)
     
     -- Создаем компоненты
     Components.ManaBar = ManaBar.New(gui)
@@ -124,12 +128,6 @@ function UIManager.Init()
     end)
     
     HotkeyText.New(gui)
-    
-    -- Инициализируем компоненты
-    SlotPanel.Init()
-    AggroBar.Init()
-    CraftingMenu.Init()
-    SoulStackUI.Init()
     
     -- Начальные значения
     UIManager.UpdateMana(50, 50)

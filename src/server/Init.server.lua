@@ -1,86 +1,77 @@
--- src/server/Init.server.lua
+--!strict
+-- src/server/init.server.lua
 -- ТОЧКА ВХОДА СЕРВЕРА — ЗАПУСК ВСЕХ СЕРВИСОВ
 
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-print("=" :rep(60))
+local line = string.rep("=", 60)
+
+print(line)
 print("🧙‍♂️ NECROMANCER GAME - СЕРВЕР ЗАПУЩЕН")
-print("=" :rep(60))
+print(line)
+
+-- Получаем папку с модулями (с ожиданием)
+local Modules = ServerStorage:WaitForChild("Modules")
 
 -- Загружаем конфиги
 local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
 local Buffs = require(ReplicatedStorage.Constants.Buffs)
 local Recipes = require(ReplicatedStorage.Constants.Recipes)
-local Enums = require(ReplicatedStorage.Shared.Enums)
 
 print("[Init] 📊 Конфиги загружены")
-print(string.format("   - Юнитов: %d", table.count(BaseStats.Units)))
-print(string.format("   - Баффов: %d", table.count(Buffs)))
-print(string.format("   - Рецептов: %d (2x), %d (3x), %d (спец)",
-    #(Recipes.Merge2 or {}),
-    #(Recipes.Merge3 or {}),
-    #(Recipes.SpecialRecipes or {})))
 
 -- ============================================
 -- ЗАПУСК СЕРВИСОВ (по порядку зависимостей)
 -- ============================================
 
--- 1. ArmyService (ядро: мана, уровни, слоты, стек)
-local ArmyService = require(ServerStorage.Modules.ArmyService)
+-- 1. ArmyService
+local ArmyService = require(Modules:WaitForChild("ArmyService"))
 ArmyService.Init()
 
--- 2. CorpseManager (таймеры гниения)
-local CorpseManager = require(ServerStorage.Modules.CorpseManager)
+-- 2. CorpseManager
+local CorpseManager = require(Modules:WaitForChild("CorpseManager"))
 CorpseManager.Start()
 
--- 3. RitualService (воскрешение трупов)
-local RitualService = require(ServerStorage.Modules.RitualService)
+-- 3. RitualService
+local RitualService = require(Modules:WaitForChild("RitualService"))
 RitualService.Init(ArmyService, CorpseManager)
 
--- 4. UnitFactory (спавн юнитов в мире)
-local UnitFactory = require(ServerStorage.Modules.UnitFactory)
+-- 4. UnitFactory
+local UnitFactory = require(Modules:WaitForChild("UnitFactory"))
 UnitFactory.Init(ArmyService)
 
--- 5. CraftingService (слияние карточек)
-local CraftingService = require(ServerStorage.Modules.CraftingService)
+-- 5. CraftingService
+local CraftingService = require(Modules:WaitForChild("CraftingService"))
 CraftingService.Init(ArmyService)
 
--- 6. AggroService (гнев деревни)
-local AggroService = require(ServerStorage.Modules.AggroService)
+-- 6. AggroService
+local AggroService = require(Modules:WaitForChild("AggroService"))
 AggroService.Init(ArmyService)
 
+-- 7. TestEnemySpawner (тестовый)
+local TestEnemySpawner = require(Modules:WaitForChild("TestEnemySpawner"))
+TestEnemySpawner.Init(ArmyService, CorpseManager)
+
 -- ============================================
--- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ (которые уже в игре)
+-- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ
 -- ============================================
 
+-- Подписка на новых игроков
+Players.PlayerAdded:Connect(function(player)
+    AggroService.InitPlayer(player)
+    print(`[Init] 👋 ${player.Name} присоединился`)
+end)
+
+-- Уже существующие игроки
 for _, player in ipairs(Players:GetPlayers()) do
     AggroService.InitPlayer(player)
     print(`[Init] Инициализирована агрессия для ${player.Name}`)
 end
 
--- Подписка на новых игроков
-Players.PlayerAdded:Connect(function(player)
-    AggroService.InitPlayer(player)
-    print(`[Init] 👋 ${player.Name} присоединился, агрессия инициализирована`)
-end)
-
-print("=" :rep(60))
-print("[Init] ✅ ВСЕ СЕРВИСЫ ЗАГРУЖЕНЫ:")
-print("   1. ArmyService     - мана, уровни, слоты, стек карточек")
-print("   2. CorpseManager   - таймеры гниения трупов")
-print("   3. RitualService   - воскрешение трупов")
-print("   4. UnitFactory     - спавн юнитов, AI, бой")
-print("   5. CraftingService - слияние карточек")
-print("   6. AggroService    - гнев деревни")
-print("=" :rep(60))
+print(line)
+print("[Init] ✅ ВСЕ СЕРВИСЫ ЗАГРУЖЕНЫ")
+print(line)
 print("[Init] 🎮 СЕРВЕР ГОТОВ К ПРИЕМУ ИГРОКОВ")
-print("=" :rep(60))
-
--- Вспомогательная функция
-function table.count(t)
-    local count = 0
-    for _ in pairs(t) do count = count + 1 end
-    return count
-end
+print(line)

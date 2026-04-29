@@ -1,25 +1,25 @@
 -- src/ui/CraftingMenu.lua
 -- Окно слияния карточек (мержа)
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local player = Players.LocalPlayer
-local NetworkBridge = require(script.Parent.Parent.client.NetworkBridge)
-local SoulStackUI = require(script.Parent.SoulStackUI)
-
 local CraftingMenu = {}
 
 local menuFrame = nil
 local isOpen = false
+local currentGui = nil
+local SoulStackUI = nil
+local NetworkBridge = nil
 
 -- ============================================
 -- СОЗДАНИЕ ОКНА
 -- ============================================
 
 local function CreateMenu()
-    local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
-    if not screenGui then return nil end
+    if menuFrame then return menuFrame end
+    
+    if not currentGui then
+        warn("[CraftingMenu] Ошибка: Попытка создания без ScreenGui!")
+        return nil
+    end
     
     menuFrame = Instance.new("Frame")
     menuFrame.Name = "CraftingMenu"
@@ -29,13 +29,12 @@ local function CreateMenu()
     menuFrame.BorderSizePixel = 1
     menuFrame.BorderColor3 = Color3.fromRGB(100, 100, 150)
     menuFrame.Visible = false
-    menuFrame.Parent = screenGui
+    menuFrame.Parent = currentGui
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = menuFrame
     
-    -- Заголовок
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 40)
     title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -45,7 +44,6 @@ local function CreateMenu()
     title.TextScaled = true
     title.Parent = menuFrame
     
-    -- Инструкция
     local instruction = Instance.new("TextLabel")
     instruction.Size = UDim2.new(1, -20, 0, 30)
     instruction.Position = UDim2.new(0, 10, 0, 45)
@@ -56,7 +54,6 @@ local function CreateMenu()
     instruction.Font = Enum.Font.Gotham
     instruction.Parent = menuFrame
     
-    -- Кнопка слияния
     local mergeButton = Instance.new("TextButton")
     mergeButton.Name = "MergeButton"
     mergeButton.Size = UDim2.new(0.4, 0, 0, 40)
@@ -72,7 +69,6 @@ local function CreateMenu()
     mergeCorner.CornerRadius = UDim.new(0, 8)
     mergeCorner.Parent = mergeButton
     
-    -- Кнопка закрытия
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 30, 0, 30)
@@ -88,16 +84,18 @@ local function CreateMenu()
     closeCorner.CornerRadius = UDim.new(0, 6)
     closeCorner.Parent = closeButton
     
-    -- Обработчики
     mergeButton.MouseButton1Click:Connect(function()
-        local selectedCards = SoulStackUI.GetSelectedCards()
-        if #selectedCards >= 2 and #selectedCards <= 3 then
-            NetworkBridge.RequestMerge(selectedCards)
-            SoulStackUI.ClearSelection()
-            CraftingMenu.Close()
-        else
-            print("[CraftingMenu] Нужно выбрать 2 или 3 карточки")
-            -- TODO: показать уведомление
+        if SoulStackUI then
+            local selectedCards = SoulStackUI.GetSelectedCards()
+            if #selectedCards >= 2 and #selectedCards <= 3 then
+                if NetworkBridge then
+                    NetworkBridge.RequestMerge(selectedCards)
+                end
+                SoulStackUI.ClearSelection()
+                CraftingMenu.Close()
+            else
+                print("[CraftingMenu] Нужно выбрать 2 или 3 карточки")
+            end
         end
     end)
     
@@ -139,8 +137,11 @@ function CraftingMenu.Toggle()
     end
 end
 
-function CraftingMenu.Init()
+function CraftingMenu.Init(gui: Instance, soulStackUI: any, networkBridge: any)
     print("[CraftingMenu] 🔮 Инициализация окна слияния")
+    currentGui = gui
+    SoulStackUI = soulStackUI
+    NetworkBridge = networkBridge
     CreateMenu()
     print("[CraftingMenu] ✅ Готов")
 end

@@ -1,10 +1,14 @@
 -- src/client/RemoteListener.lua
 -- Прослушивает события от сервера и обновляет UI
--- ВЕРСИЯ 1.0 — ПОДДЕРЖКА ВСЕХ СОБЫТИЙ
+-- ВЕРСИЯ 1.1 — ИСПРАВЛЕННЫЕ ПУТИ
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local UIManager = require(script.Parent.Parent.ui.UIManager)
+-- ИСПРАВЛЕНО: правильный путь к UIManager
+-- script.Parent = RemoteListener (лежит в папке client)
+-- script.Parent.Parent = папка StarterPlayerScripts
+-- оттуда берем папку ui и UIManager
+local UIManager = require(script.Parent:WaitForChild("ui"):WaitForChild("UIManager"))
 
 -- ============================================
 -- Получение RemoteEvent'ов
@@ -25,13 +29,11 @@ end
 -- Обработчики событий
 -- ============================================
 
--- Обновление маны
 local function OnManaUpdate(currentMana: number, maxMana: number)
     UIManager.UpdateMana(currentMana, maxMana)
     print(`[RemoteListener] 💙 Мана: ${currentMana}/${maxMana}`)
 end
 
--- Обновление армии (слоты)
 local function OnArmyUpdate(maxSlots: number, activeSlots: table)
     UIManager.UpdateSlots(maxSlots, activeSlots)
     local count = 0
@@ -39,7 +41,6 @@ local function OnArmyUpdate(maxSlots: number, activeSlots: table)
     print(`[RemoteListener] 📦 Армия: ${count}/${maxSlots} слотов`)
 end
 
--- Обновление стека карточек
 local function OnSoulStackUpdate(soulStack: table)
     UIManager.UpdateSoulStack(soulStack)
     local count = 0
@@ -47,13 +48,11 @@ local function OnSoulStackUpdate(soulStack: table)
     print(`[RemoteListener] 📇 Стек карточек: ${count} шт`)
 end
 
--- Обновление уровня и опыта
 local function OnLevelUpdate(level: number, experience: number, nextLevelExp: number)
     UIManager.UpdateLevel(level, experience, nextLevelExp)
     print(`[RemoteListener] 📈 Уровень ${level}: ${experience}/${nextLevelExp} опыта`)
 end
 
--- Обновление кулдауна куба
 local function OnCubeCooldownUpdate(remainingTime: number)
     local canEnter = remainingTime <= 0
     UIManager.UpdateCubeButton(canEnter, remainingTime)
@@ -62,7 +61,6 @@ local function OnCubeCooldownUpdate(remainingTime: number)
     end
 end
 
--- Обновление агрессии
 local function OnAggroUpdate(aggroLevel: number, maxAggro: number)
     UIManager.UpdateAggro(aggroLevel, maxAggro)
     print(`[RemoteListener] 😠 Агрессия: ${aggroLevel}/${maxAggro}`)
@@ -77,7 +75,6 @@ local RemoteListener = {}
 function RemoteListener.Init()
     print("[RemoteListener] 📡 Инициализация слушателя событий")
     
-    -- Подписываемся на события из ArmyRemoteEvents
     local manaEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateMana")
     if manaEvent then
         manaEvent.OnClientEvent:Connect(OnManaUpdate)
@@ -118,7 +115,6 @@ function RemoteListener.Init()
         warn("[RemoteListener] UpdateCubeCooldown не найден")
     end
     
-    -- Подписываемся на события из ArmyRemoteEvents (агрессия)
     local aggroEvent = GetRemoteEvent("ArmyRemoteEvents", "UpdateAggro")
     if aggroEvent then
         aggroEvent.OnClientEvent:Connect(OnAggroUpdate)

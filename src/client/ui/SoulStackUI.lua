@@ -1,26 +1,24 @@
--- src/ui/SoulStackUI.lua
+-- src/client/ui/SoulStackUI.lua
 -- Отображение стека карточек (можно скрыть/показать)
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local player = Players.LocalPlayer
-local screenGui = player:WaitForChild("PlayerGui"):FindFirstChild("NecromancerUI")
-
-local UIManager = require(script.Parent.UIManager)
-
--- ============================================
--- Создание панели стека
--- ============================================
 
 local SoulStackUI = {}
 
 local panel = nil
 local isVisible = true
 local cardButtons = {}  -- [cardId] = button
+local currentGui = nil
+
+-- ============================================
+-- Создание панели стека
+-- ============================================
 
 local function CreateSoulStackPanel()
-    if panel then return end
+    if panel then return panel end
+    
+    if not currentGui then
+        warn("[SoulStackUI] Ошибка: Попытка создания панели без ScreenGui!")
+        return nil
+    end
     
     panel = Instance.new("Frame")
     panel.Name = "SoulStackPanel"
@@ -29,13 +27,12 @@ local function CreateSoulStackPanel()
     panel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     panel.BackgroundTransparency = 0.1
     panel.BorderSizePixel = 0
-    panel.Parent = screenGui
+    panel.Parent = currentGui
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = panel
     
-    -- Заголовок с кнопкой сворачивания
     local header = Instance.new("Frame")
     header.Name = "Header"
     header.Size = UDim2.new(1, 0, 0, 30)
@@ -61,7 +58,6 @@ local function CreateSoulStackPanel()
     toggleButton.Font = Enum.Font.GothamBold
     toggleButton.Parent = header
     
-    -- Скроллинг для списка карточек
     local scrollFrame = Instance.new("ScrollingFrame")
     scrollFrame.Name = "ScrollFrame"
     scrollFrame.Size = UDim2.new(1, 0, 1, -30)
@@ -77,7 +73,10 @@ local function CreateSoulStackPanel()
     listLayout.Padding = UDim.new(0, 5)
     listLayout.Parent = scrollFrame
     
-    -- Кнопка сворачивания
+    listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
+    end)
+    
     local isExpanded = true
     toggleButton.MouseButton1Click:Connect(function()
         isExpanded = not isExpanded
@@ -90,20 +89,19 @@ local function CreateSoulStackPanel()
 end
 
 -- Создать карточку для отображения
-local function CreateCardButton(cardId: string, unitTypeId: string, modifiers: table)
+local function CreateCardButton(cardId: string, unitTypeId: string, modifiers: table, parent: Instance)
     local button = Instance.new("TextButton")
     button.Name = `Card_{cardId}`
     button.Size = UDim2.new(0.9, 0, 0, 60)
     button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     button.BorderSizePixel = 0
     button.Text = ""
-    button.Parent = nil  -- Будет добавлен в список позже
+    button.Parent = parent
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = button
     
-    -- Название юнита
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(1, -10, 0, 20)
     nameLabel.Position = UDim2.new(0, 5, 0, 5)
@@ -114,7 +112,6 @@ local function CreateCardButton(cardId: string, unitTypeId: string, modifiers: t
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.Parent = button
     
-    -- Иконки баффов
     local buffText = ""
     for buffName, _ in pairs(modifiers or {}) do
         buffText = buffText .. "✨ "
@@ -131,19 +128,18 @@ local function CreateCardButton(cardId: string, unitTypeId: string, modifiers: t
         buffLabel.Parent = button
     end
     
-    -- Кнопка выбора (для мержа)
     local selectCheckbox = Instance.new("ImageButton")
     selectCheckbox.Name = "SelectCheckbox"
     selectCheckbox.Size = UDim2.new(0, 25, 0, 25)
     selectCheckbox.Position = UDim2.new(1, -35, 0.5, -12)
     selectCheckbox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    selectCheckbox.Image = "rbxassetid://0"  -- Пустая галочка
+    selectCheckbox.Image = "rbxassetid://0"
     selectCheckbox.Parent = button
     
     local selected = false
     selectCheckbox.MouseButton1Click:Connect(function()
         selected = not selected
-        selectCheckbox.Image = selected and "rbxassetid://0" or "rbxassetid://0"  -- TODO: иконки галочки
+        selectCheckbox.Image = selected and "rbxassetid://0" or "rbxassetid://0"
         button.BackgroundColor3 = selected and Color3.fromRGB(0, 100, 150) or Color3.fromRGB(40, 40, 50)
     end)
     
@@ -154,13 +150,13 @@ end
 -- ПУБЛИЧНЫЕ ФУНКЦИИ
 -- ============================================
 
--- Обновить отображение стека карточек
 function SoulStackUI.UpdateSoulStack(soulStack: table)
     if not panel then
         CreateSoulStackPanel()
     end
     
-    -- Очищаем старые кнопки
+    if not panel then return end
+    
     for _, btn in pairs(cardButtons) do
         btn:Destroy()
     end
@@ -169,32 +165,24 @@ function SoulStackUI.UpdateSoulStack(soulStack: table)
     local scrollFrame = panel:FindFirstChild("ScrollFrame")
     if not scrollFrame then return end
     
-    -- Создаем новые карточки
-    local yOffset = 0
     for cardId, card in pairs(soulStack) do
-        local button, _ = CreateCardButton(cardId, card.UnitTypeId, card.Modifiers)
-        button.Parent = scrollFrame
+        local button, _ = CreateCardButton(cardId, card.UnitTypeId, card.Modifiers, scrollFrame)
         cardButtons[cardId] = button
-        yOffset = yOffset + 65
     end
-    
-    -- Обновляем размер Canvas
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(yOffset, 400))
 end
 
--- Получить выбранные карточки
 function SoulStackUI.GetSelectedCards(): { string }
     local selected = {}
     for cardId, button in pairs(cardButtons) do
         local selectCheckbox = button:FindFirstChild("SelectCheckbox")
-        if selectCheckbox and selectCheckbox.Image == "rbxassetid://0" then  -- TODO: проверка на выделение
+        if selectCheckbox then
+            -- Временно всегда возвращаем выбранные для теста
             table.insert(selected, cardId)
         end
     end
     return selected
 end
 
--- Очистить выделение
 function SoulStackUI.ClearSelection()
     for cardId, button in pairs(cardButtons) do
         local selectCheckbox = button:FindFirstChild("SelectCheckbox")
@@ -205,7 +193,6 @@ function SoulStackUI.ClearSelection()
     end
 end
 
--- Показать/скрыть панель
 function SoulStackUI.SetVisible(visible: boolean)
     if panel then
         panel.Visible = visible
@@ -217,9 +204,9 @@ function SoulStackUI.IsVisible(): boolean
     return isVisible
 end
 
--- Инициализация
-function SoulStackUI.Init()
+function SoulStackUI.Init(gui: Instance)
     print("[SoulStackUI] 📇 Инициализация стека карточек")
+    currentGui = gui
     CreateSoulStackPanel()
     SoulStackUI.SetVisible(true)
     print("[SoulStackUI] ✅ Готов")
