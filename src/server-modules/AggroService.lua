@@ -1,32 +1,29 @@
 -- src/server-modules/AggroService.lua
 -- Управление гневом деревни
--- Чем больше игрок нападает на деревню, тем сильнее ответная атака
+-- ВЕРСИЯ 2.0 — С REMOTEEVENT'АМИ И ПОЛНОЙ СВЯЗЬЮ С КЛИЕНТОМ
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
 local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
 local Enums = require(ReplicatedStorage.Shared.Enums)
 
--- Сервисы (заполняются при Init)
-local ArmyService = nil
-
 -- ============================================
--- Хранилище данных по игрокам
+-- RemoteEvents для связи с клиентом
 -- ============================================
--- AggroData[userId] = {
---     CurrentAggro = number,     -- 0-100
---     LastAttackTime = number,   -- для расчета падения агро
---     IsUnderAttack = boolean,   -- атакуют ли погост игрока сейчас
---     AttackCooldown = number,   -- когда можно снова атаковать
--- }
 
-local AggroData = {}
+local RemoteEventsFolder = ReplicatedStorage:FindFirstChild("ArmyRemoteEvents")
+if not RemoteEventsFolder then
+    RemoteEventsFolder = Instance.new("Folder")
+    RemoteEventsFolder.Name = "ArmyRemoteEvents"
+    RemoteEventsFolder.Parent = ReplicatedStorage
+end
 
--- Ссылка на погост игрока (пока заглушка)
-local PlayerPogosts = {}  -- [userId] = Instance (модель погоста)
+local UpdateAggroEvent = Instance.new("RemoteEvent")
+UpdateAggroEvent.Name = "UpdateAggro"
+UpdateAggroEvent.Parent = RemoteEventsFolder
 
 -- ============================================
 -- Константы из конфига
@@ -38,21 +35,36 @@ local MAX_AGGRO = BaseStats.Aggro.MaxAggro or 100
 local ATTACK_THRESHOLD = BaseStats.Aggro.AttackThreshold or 70
 
 -- ============================================
--- Внутренние функции
+-- Хранилище данных по игрокам
+-- ============================================
+-- AggroData[userId] = {
+--     CurrentAggro = number,     -- 0-100
+--     LastAttackTime = number,
+--     IsUnderAttack = boolean,
+--     AttackCooldown = number,
+-- }
+
+local AggroData = {}
+
+-- Ссылка на погост игрока
+local PlayerPogosts = {}  -- [userId] = Instance
+
+-- Сервисы (заполняются при Init)
+local ArmyService = nil
+
+-- ============================================
+-- Отправка обновлений клиенту
 -- ============================================
 
--- Получить данные агрессии игрока
-local function GetAggroData(player: Player): table?
-    return AggroData[player.UserId]
-end
-
--- Обновить UI игрока (отправить текущий уровень агрессии)
 local function SendAggroUpdate(player: Player, aggroLevel: number)
-    -- TODO: RemoteEvent для обновления шкалы агрессии на UI
+    UpdateAggroEvent:FireClient(player, aggroLevel, MAX_AGGRO)
     print(`[AggroService] 📊 Агрессия ${player.Name}: ${aggroLevel}/${MAX_AGGRO}`)
 end
 
--- Создать вражеский отряд для атаки на погост
+-- ============================================
+-- Создание вражеского отряда
+-- ============================================
+
 local function SpawnAttackParty(player: Player, aggroLevel: number)
     local pogost = PlayerPogosts[player.UserId]
     if not pogost then
@@ -60,11 +72,8 @@ local function SpawnAttackParty(player: Player, aggroLevel: number)
         return
     end
     
-    -- Определяем силу отряда в зависимости от уровня агрессии
-    local unitCount = math.floor(aggroLevel / 20) + 1  -- 1-5 юнитов
-    unitCount = math.min(unitCount, 5)
+    local unitCount = math.min(math.floor(aggroLevel / 20) + 1, 5)
     
-    -- Типы врагов (чем выше агро, тем сильнее)
     local enemyTypes = {"Villager", "Militia"}
     if aggroLevel >= 50 then
         table.insert(enemyTypes, "Archer")
@@ -75,8 +84,10 @@ local function SpawnAttackParty(player: Player, aggroLevel: number)
     
     print(`[AggroService] ⚔️ Деревня атакует погост ${player.Name}! Уровень агро: ${aggroLevel}, юнитов: ${unitCount}`)
     
-    -- Создаем врагов вокруг погоста
-    local pogostPosition = pogost:GetPivot() or pogost.Position
+    local pogostPosition = pogost:GetPivot()
+    if not pogostPosition then
+        pogostPosition = pogost.Position
+    end
     local radius = 30
     
     for i = 1, unitCount do
@@ -87,45 +98,40 @@ local function SpawnAttackParty(player: Player, aggroLevel: number)
         
         local enemyType = enemyTypes[math.random(1, #enemyTypes)]
         
-        -- TODO: Создать модель врага
+        -- TODO: Создать модель врага через UnitFactory
         print(`[AggroService]    - Создан ${enemyType} на позиции ${spawnPos}`)
-        
-        -- TODO: Добавить врага в систему боя
     end
     
-    -- Устанавливаем кулдаун на следующую атаку
     local data = AggroData[player.UserId]
     if data then
-        data.AttackCooldown = os.time() + 60  -- 60 секунд между атаками
+        data.AttackCooldown = os.time() + 60
     end
 end
 
--- Проверить, нужно ли начать атаку на погост
+-- ============================================
+-- Проверка и запуск атаки
+-- ============================================
+
 local function CheckAndTriggerAttack(player: Player, aggroLevel: number)
     local data = AggroData[player.UserId]
     if not data then return end
     
-    -- Проверяем, не в кулдауне ли атака
     if data.AttackCooldown and os.time() < data.AttackCooldown then
         return
     end
     
-    -- Проверяем, не идет ли уже атака
     if data.IsUnderAttack then
         return
     end
     
-    -- Проверяем порог агрессии
     if aggroLevel >= ATTACK_THRESHOLD then
         data.IsUnderAttack = true
         SpawnAttackParty(player, aggroLevel)
         
-        -- Сбрасываем агро после атаки (деревня "выпустила пар")
         local newAggro = math.max(0, aggroLevel - 30)
         data.CurrentAggro = newAggro
         SendAggroUpdate(player, newAggro)
         
-        -- Через некоторое время снимаем флаг атаки
         task.delay(120, function()
             if AggroData[player.UserId] then
                 AggroData[player.UserId].IsUnderAttack = false
@@ -141,7 +147,6 @@ end
 
 local AggroService = {}
 
--- Инициализировать данные агрессии для игрока
 function AggroService.InitPlayer(player: Player)
     local userId = player.UserId
     if AggroData[userId] then
@@ -155,13 +160,10 @@ function AggroService.InitPlayer(player: Player)
         AttackCooldown = 0,
     }
     
+    SendAggroUpdate(player, 0)
     print(`[AggroService] 📊 Инициализирована агрессия для ${player.Name}`)
 end
 
--- Добавить агрессию (когда игрок атакует деревню)
--- @param player: Player - игрок
--- @param amount: number - количество агрессии (опционально, по умолчанию PER_ATTACK)
--- @param reason: string - причина (для логирования)
 function AggroService.AddAggro(player: Player, amount: number?, reason: string)
     local data = AggroData[player.UserId]
     if not data then
@@ -177,17 +179,13 @@ function AggroService.AddAggro(player: Player, amount: number?, reason: string)
     print(`[AggroService] 😠 ${player.Name} +${addAmount} агрессии (${reason}). Теперь: ${newAggro}/${MAX_AGGRO}`)
     
     SendAggroUpdate(player, newAggro)
-    
-    -- Проверяем, не пора ли атаковать
     CheckAndTriggerAttack(player, newAggro)
 end
 
--- Добавить агрессию за убийство мирного жителя
 function AggroService.AddKillAggro(player: Player, unitType: string)
     AggroService.AddAggro(player, PER_KILL, `убийство ${unitType}`)
 end
 
--- Уменьшить агрессию (со временем или за выполнение квеста)
 function AggroService.ReduceAggro(player: Player, amount: number, reason: string)
     local data = AggroData[player.UserId]
     if not data then return end
@@ -200,27 +198,44 @@ function AggroService.ReduceAggro(player: Player, amount: number, reason: string
     SendAggroUpdate(player, newAggro)
 end
 
--- Получить текущий уровень агрессии игрока
-function AggroService.GetAggroLevel(player: Player): number
+function AggroService.SetAggro(player: Player, value: number, reason: string)
     local data = AggroData[player.UserId]
-    if not data then return 0 end
-    return data.CurrentAggro
+    if not data then
+        AggroService.InitPlayer(player)
+        data = AggroData[player.UserId]
+    end
+    
+    local newAggro = math.clamp(value, 0, MAX_AGGRO)
+    data.CurrentAggro = newAggro
+    data.LastAttackTime = os.time()
+    
+    print(`[AggroService] 🎯 ${player.Name} установлена агрессия ${newAggro} (${reason})`)
+    
+    SendAggroUpdate(player, newAggro)
+    CheckAndTriggerAttack(player, newAggro)
 end
 
--- Зарегистрировать погост игрока (куда будут приходить атаки)
+function AggroService.GetAggroLevel(player: Player): number
+    local data = AggroData[player.UserId]
+    return data and data.CurrentAggro or 0
+end
+
 function AggroService.RegisterPogost(player: Player, pogostModel: Instance)
     PlayerPogosts[player.UserId] = pogostModel
     print(`[AggroService] 🏚️ Зарегистрирован погост для ${player.Name}`)
 end
 
--- Проверить, атакуют ли погост игрока
 function AggroService.IsUnderAttack(player: Player): boolean
     local data = AggroData[player.UserId]
     return data and data.IsUnderAttack or false
 end
 
+function AggroService.GetMaxAggro(): number
+    return MAX_AGGRO
+end
+
 -- ============================================
--- ЦИКЛ ПАССИВНОГО СНИЖЕНИЯ АГРЕССИИ
+-- Цикл пассивного снижения агрессии
 -- ============================================
 
 local decayConnection = nil
@@ -235,19 +250,15 @@ function AggroService.StartDecay()
     decayConnection = RunService.Heartbeat:Connect(function(deltaTime)
         for userId, data in pairs(AggroData) do
             if data.CurrentAggro > 0 and not data.IsUnderAttack then
-                -- Снижаем агрессию со временем
                 local decayAmount = DECAY_PER_SECOND * deltaTime
                 local newAggro = math.max(0, data.CurrentAggro - decayAmount)
                 
                 if newAggro ~= data.CurrentAggro then
                     data.CurrentAggro = newAggro
                     
-                    -- Отправляем обновление только если изменилось значительно
-                    if math.floor(newAggro) ~= math.floor(data.CurrentAggro + decayAmount) then
-                        local player = Players:GetPlayerByUserId(userId)
-                        if player then
-                            SendAggroUpdate(player, newAggro)
-                        end
+                    local player = Players:GetPlayerByUserId(userId)
+                    if player then
+                        SendAggroUpdate(player, newAggro)
                     end
                 end
             end
@@ -274,11 +285,11 @@ function AggroService.Init(armyService)
         error("[AggroService] ❌ Не удалось инициализировать: ArmyService отсутствует")
     end
     
-    -- Запускаем пассивное снижение агрессии
     AggroService.StartDecay()
     
     print("[AggroService] ========== ИНИЦИАЛИЗАЦИЯ ==========")
     print("   - Зависимости: ArmyService ✅")
+    print("   - RemoteEvent: UpdateAggro ✅")
     print("   - За атаку на деревню: +", PER_ATTACK, "агро")
     print("   - За убийство жителя: +", PER_KILL, "агро")
     print("   - Пассивное снижение:", DECAY_PER_SECOND, "агро/сек")
