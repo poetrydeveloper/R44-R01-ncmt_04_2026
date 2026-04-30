@@ -1,21 +1,72 @@
 -- src/server-modules/TestEnemySpawner.lua
--- Спавн тестовых врагов для проверки механик
--- ВЕРСИЯ 1.0
+-- Спавн тестовых врагов у деревни с патрулированием
+-- ВЕРСИЯ 2.0
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 local BaseStats = require(ReplicatedStorage.Constants.BaseStats)
 
--- Сервисы (заполняются при Init)
-local ArmyService = nil
-local CorpseManager = nil
+-- ============================================
+-- КОНФИГУРАЦИЯ ДЕРЕВНИ
+-- ============================================
+
+-- Позиция деревни (по координатам твоей модели)
+local VILLAGE_POSITION = Vector3.new(207, 22.901, 250)
+
+-- Радиус спавна вокруг деревни
+local SPAWN_RADIUS = 50
+
+-- Радиус патрулирования
+local PATROL_RADIUS_MIN = 20
+local PATROL_RADIUS_MAX = 60
+
+-- Радиус агро (когда враг замечает игрока)
+local AGRO_RADIUS = 50
+
+-- Радиус потери игрока (возврат к патрулю)
+local LOSE_RADIUS = 70
+
+-- ============================================
+-- Состояния врага
+-- ============================================
+local EnemyState = {
+    PATROL = "Patrol",
+    CHASE = "Chase",
+}
 
 -- ============================================
 -- Хранилище активных врагов
 -- ============================================
-local ActiveEnemies = {}  -- [enemyId] = {Model, Humanoid, UnitType, Position}
+local ActiveEnemies = {}  -- [enemyId] = {Model, Humanoid, UnitType, Position, State, PatrolTarget, Target}
+
+-- Сервисы
+local ArmyService = nil
+local CorpseManager = nil
+
+-- ============================================
+-- Вспомогательные функции
+-- ============================================
+
+-- Выбор случайной точки для патруля
+local function GetRandomPatrolPoint()
+    local angle = math.random() * 2 * math.pi
+    local radius = math.random(PATROL_RADIUS_MIN, PATROL_RADIUS_MAX)
+    local x = VILLAGE_POSITION.X + math.cos(angle) * radius
+    local z = VILLAGE_POSITION.Z + math.sin(angle) * radius
+    return Vector3.new(x, VILLAGE_POSITION.Y, z)
+end
+
+-- Выбор случайной точки для спавна
+local function GetRandomSpawnPoint()
+    local angle = math.random() * 2 * math.pi
+    local radius = math.random(30, SPAWN_RADIUS)
+    local x = VILLAGE_POSITION.X + math.cos(angle) * radius
+    local z = VILLAGE_POSITION.Z + math.sin(angle) * radius
+    return Vector3.new(x, VILLAGE_POSITION.Y, z)
+end
 
 -- ============================================
 -- Создание модели врага
@@ -25,14 +76,12 @@ local function CreateEnemyModel(enemyType: string, position: Vector3): Model
     local model = Instance.new("Model")
     model.Name = enemyType
     
-    -- Humanoid
     local humanoid = Instance.new("Humanoid")
     humanoid.MaxHealth = 50
     humanoid.Health = 50
     humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
     humanoid.Parent = model
     
-    -- PrimaryPart (простая парт для физики)
     local primaryPart = Instance.new("Part")
     primaryPart.Name = "HumanoidRootPart"
     primaryPart.Size = Vector3.new(3, 3, 3)
@@ -46,7 +95,6 @@ local function CreateEnemyModel(enemyType: string, position: Vector3): Model
     
     model.PrimaryPart = primaryPart
     
-    -- Голова (для красоты)
     local head = Instance.new("Part")
     head.Name = "Head"
     head.Size = Vector3.new(2, 2, 2)
@@ -55,7 +103,6 @@ local function CreateEnemyModel(enemyType: string, position: Vector3): Model
     head.Position = position + Vector3.new(0, 2, 0)
     head.Parent = model
     
-    -- Туловище
     local torso = Instance.new("Part")
     torso.Name = "Torso"
     torso.Size = Vector3.new(2.5, 2, 2)
@@ -78,28 +125,24 @@ end
 local function OnEnemyDeath(enemyId: string, enemyModel: Model, enemyType: string, position: Vector3)
     print(`[TestEnemySpawner] 💀 Враг ${enemyId} (${enemyType}) убит!`)
     
-    -- Удаляем из активных
     ActiveEnemies[enemyId] = nil
     
-    -- Создаем труп через CorpseManager
     if CorpseManager then
-        local killerId = 0  -- TODO: определить кто убил
+        local killerId = 0
         CorpseManager.CreateCorpse(enemyType, position, killerId)
     end
     
-    -- Начисляем ману и опыт игроку (TODO: определить кто убил)
-    -- Пока просто спавним нового врага через 5 секунд
-    task.delay(5, function()
-        TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(
-            math.random(-50, 50),
-            5,
-            math.random(-50, 50)
-        ))
+    -- Спавним нового врага через 10 секунд
+    task.delay(10, function()
+        if TestEnemySpawner then
+            local spawnPos = GetRandomSpawnPoint()
+            TestEnemySpawner.SpawnEnemy("TestEnemy", spawnPos)
+        end
     end)
 end
 
 -- ============================================
--- AI врага (простой: бежит к игроку)
+-- AI врага (патруль + преследование)
 -- ============================================
 
 local function EnemyAI(enemyId: string, deltaTime: number)
@@ -108,15 +151,22 @@ local function EnemyAI(enemyId: string, deltaTime: number)
         return
     end
     
-    -- Ищем ближайшего игрока
-    local players = game:GetService("Players"):GetPlayers()
-    local nearestPlayer = nil
-    local nearestDistance = 50  -- Радиус поиска
+    -- Инициализация состояния
+    if not enemy.State then
+        enemy.State = EnemyState.PATROL
+        enemy.PatrolTarget = GetRandomPatrolPoint()
+    end
     
-    for _, player in ipairs(players) do
+    local currentPos = enemy.Model.PrimaryPart.Position
+    
+    -- Поиск ближайшего игрока
+    local nearestPlayer = nil
+    local nearestDistance = AGRO_RADIUS
+    
+    for _, player in ipairs(Players:GetPlayers()) do
         local character = player.Character
         if character and character.PrimaryPart then
-            local distance = (enemy.Model.PrimaryPart.Position - character.PrimaryPart.Position).Magnitude
+            local distance = (currentPos - character.PrimaryPart.Position).Magnitude
             if distance < nearestDistance then
                 nearestDistance = distance
                 nearestPlayer = player
@@ -124,21 +174,47 @@ local function EnemyAI(enemyId: string, deltaTime: number)
         end
     end
     
-    if nearestPlayer and nearestPlayer.Character and nearestPlayer.Character.PrimaryPart then
-        -- Движение к игроку
-        local targetPos = nearestPlayer.Character.PrimaryPart.Position
-        local direction = (targetPos - enemy.Model.PrimaryPart.Position).Unit
-        local speed = 20  -- Скорость передвижения
+    -- Переключение состояний
+    if nearestPlayer and nearestDistance < AGRO_RADIUS then
+        if enemy.State ~= EnemyState.CHASE then
+            enemy.State = EnemyState.CHASE
+            print(`[TestEnemySpawner] 🏃 Враг ${enemyId} заметил игрока ${nearestPlayer.Name}`)
+        end
+        enemy.Target = nearestPlayer
+    elseif enemy.State == EnemyState.CHASE and (not nearestPlayer or nearestDistance > LOSE_RADIUS) then
+        enemy.State = EnemyState.PATROL
+        enemy.Target = nil
+        enemy.PatrolTarget = GetRandomPatrolPoint()
+        print(`[TestEnemySpawner] 🚶 Враг ${enemyId} вернулся к патрулю`)
+    end
+    
+    -- Действия по состоянию
+    if enemy.State == EnemyState.CHASE and enemy.Target and enemy.Target.Character then
+        -- Преследование игрока
+        local targetPos = enemy.Target.Character.PrimaryPart.Position
+        local direction = (targetPos - currentPos).Unit
+        local speed = 20
         
-        enemy.Model.PrimaryPart.Position = enemy.Model.PrimaryPart.Position + direction * speed * deltaTime
+        enemy.Model.PrimaryPart.Position = currentPos + direction * speed * deltaTime
         
         -- Атака, если близко
-        if nearestDistance < 5 then
-            local humanoid = nearestPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if (currentPos - targetPos).Magnitude < 5 then
+            local humanoid = enemy.Target.Character:FindFirstChildWhichIsA("Humanoid")
             if humanoid then
                 humanoid.Health -= 10
-                print(`[TestEnemySpawner] ⚔️ Враг ${enemyId} атаковал ${nearestPlayer.Name}!`)
+                print(`[TestEnemySpawner] ⚔️ Враг ${enemyId} атаковал ${enemy.Target.Name}!`)
             end
+        end
+    elseif enemy.State == EnemyState.PATROL then
+        -- Патрулирование
+        local direction = (enemy.PatrolTarget - currentPos).Unit
+        local speed = 12
+        
+        enemy.Model.PrimaryPart.Position = currentPos + direction * speed * deltaTime
+        
+        -- Если достиг цели, выбираем новую
+        if (currentPos - enemy.PatrolTarget).Magnitude < 5 then
+            enemy.PatrolTarget = GetRandomPatrolPoint()
         end
     end
 end
@@ -160,7 +236,6 @@ function TestEnemySpawner.SpawnEnemy(enemyType: string, position: Vector3): stri
         return nil
     end
     
-    -- Подписываемся на смерть
     humanoid.Died:Connect(function()
         OnEnemyDeath(enemyId, model, enemyType, position)
     end)
@@ -170,22 +245,26 @@ function TestEnemySpawner.SpawnEnemy(enemyType: string, position: Vector3): stri
         Humanoid = humanoid,
         UnitType = enemyType,
         Position = position,
+        State = EnemyState.PATROL,
+        PatrolTarget = GetRandomPatrolPoint(),
+        Target = nil,
     }
     
-    print(`[TestEnemySpawner] 🎮 Спавн врага ${enemyId} (${enemyType})`)
+    print(`[TestEnemySpawner] 🎮 Спавн врага ${enemyId} (${enemyType}) у деревни`)
     
     return enemyId
 end
 
 function TestEnemySpawner.SpawnTestEnemies()
-    print("[TestEnemySpawner] 🎮 Спавн тестовых врагов...")
+    print("[TestEnemySpawner] 🎮 Спавн тестовых врагов у деревни...")
     
-    -- Спавним 3 врагов вокруг центра карты
-    TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(20, 5, 20))
-    TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(-20, 5, -20))
-    TestEnemySpawner.SpawnEnemy("TestEnemy", Vector3.new(20, 5, -20))
+    local enemiesCount = 5
+    for i = 1, enemiesCount do
+        local spawnPos = GetRandomSpawnPoint()
+        TestEnemySpawner.SpawnEnemy("TestEnemy", spawnPos)
+    end
     
-    print("[TestEnemySpawner] ✅ 3 тестовых врага созданы")
+    print(`[TestEnemySpawner] ✅ ${enemiesCount} тестовых врагов создано у деревни`)
 end
 
 function TestEnemySpawner.ClearAllEnemies()
@@ -240,12 +319,12 @@ function TestEnemySpawner.Init(armyService, corpseManager)
     
     TestEnemySpawner.StartAI()
     
-    -- Автоматический спавн врагов
-    task.wait(3)  -- Ждем загрузки карты
+    task.wait(3)
     TestEnemySpawner.SpawnTestEnemies()
     
     print("[TestEnemySpawner] ========== ИНИЦИАЛИЗАЦИЯ ==========")
     print("   - Зависимости: ArmyService ✅")
+    print("   - Позиция деревни:", VILLAGE_POSITION)
     print("   - AI статус: активен")
     print("   - Тестовые враги: созданы")
     print("[TestEnemySpawner] ✅ Готов к работе")
